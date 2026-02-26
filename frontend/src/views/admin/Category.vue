@@ -1,0 +1,231 @@
+<template>
+  <div id="categoryManager">
+    <el-table :data="categoryData" :border="true" style="width: 100%" :cell-class-name="setIdColumn">
+      <el-table-column prop="id" label="分类ID"></el-table-column>
+      <el-table-column prop="name" label="分类名称"></el-table-column>
+      <el-table-column prop="rank_index" label="顺序" min-width="120">
+        <template #header>
+          顺序
+          <el-tooltip
+            class="box-item"
+            effect="dark"
+            content="数值越大越靠前, 限制100之内"
+            placement="right"
+          >
+            <el-icon><QuestionFilled /></el-icon>
+          </el-tooltip>
+        </template>
+        <template #default="scope">
+          <el-input-number :min="0" :max="100" v-model="scope.row.rank_index" size="small" @change="setRank(scope.row)" />
+        </template>
+      </el-table-column>
+      <el-table-column prop="addtime" label="新增时间" min-width="200">
+        <template #default="scope">
+          <p>{{ new Date(scope.row.addtime).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column prop="edittime" label="上次修改" min-width="200">
+        <template #default="scope">
+          <p>{{ new Date(scope.row.edittime).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column prop="banner" label="分类缩略图" min-width="150">
+        <template #default="scope">
+          <el-image style="width: 150px; height: 34px" :src="BaseUrl + scope.row.banner" fit="cover"></el-image>
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" min-width="150">
+        <template #default="scope">
+          <el-button size="small" @click="edit(scope.row)">编辑</el-button>
+          <el-popconfirm
+            width="unset"
+            confirm-button-text="确认"
+            cancel-button-text="取消"
+            cancel-button-type="info"
+            placement="left-start"
+            :title="`永久删除分类 ${scope.row.name} , 是否继续?`"
+            @confirm="del(scope.row.id)"
+          >
+            <template #reference>
+              <el-button size="small" type="danger">删除</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+    </el-table>
+
+    <br>
+
+    <el-button type="default" :text="true" bg :disabled="categoryData.length>=6" @click='open'>新增分类</el-button>
+
+    <el-dialog v-if="dialogVisible" v-model="dialogVisible" :title="handleType == 'add' ? '添加分类' : '编辑分类'" width="600"
+      draggable :before-close="handleClose">
+      <el-form :model="categoryDetail">
+        <el-form-item label="分类名称" :label-width="90">
+          <el-input v-model="categoryDetail.name" autocomplete="off" />
+        </el-form-item>
+        <el-form-item label="分类缩略图" :label-width="90">
+          <div style="width:100%">(banner长宽要求: 最佳比例👉2278x516, 或者 22:5 的长形图片)</div>
+          <el-upload action="#" class="categoryImgUploader" list-type="picture-card" v-model:file-list="cateImgFiles" :auto-upload="false" :limit="1" :show-file-list="false" :on-change="uploadHandler">
+
+            <template #default>
+              <img v-if="tempUrl" :src="tempUrl" :style="{width:bannerWidth+'px',height:bannerHeight+'px'}" />
+              <div v-else>
+                <el-icon> <Plus /> </el-icon>
+              </div>
+            </template>
+
+          </el-upload>
+          <div v-if="tempUrl" class="cate_img_previewer">
+            <el-icon size="20"><zoom-in /></el-icon>
+            <el-icon size="20" @click="tempUrl='';cateImgFiles=[]"><Delete /></el-icon>
+          </div>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleClose">取 消</el-button>
+          <el-button type="primary" @click="saveHandler">
+            确 定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import ServerAPI from '@/api/server'
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
+const BaseUrl = import.meta.env.VITE_MEDIA_URL
+const categoryData = ref([])
+const handleType = ref('add')
+const dialogVisible = ref(false)
+const categoryDetail = reactive({
+  id: '',
+  name: '',
+  banner: '',
+  rank_index: 0
+})
+const bannerWidth = ref(396)
+const bannerHeight = ref(86)
+const tempUrl = ref('')
+const cateImgFiles=ref([])
+function edit (row) {
+  handleType.value = 'edit'
+  dialogVisible.value = true
+  Object.assign(categoryDetail, row)
+  tempUrl.value = BaseUrl + row.banner
+}
+function del (id) {
+  ServerAPI.delCategory({ id })
+    .then(res => {
+      ElMessage.success('删除成功!')
+      categoryData.value = categoryData.value.filter(v => v.id != id)
+    })
+}
+function open () {
+  handleType.value = 'add'
+  dialogVisible.value = true
+}
+function handleClose () {
+  categoryDetail.id = ''
+  categoryDetail.name = ''
+  categoryDetail.banner = ''
+  tempUrl.value = ''
+  cateImgFiles.value = []
+  dialogVisible.value = false
+}
+function saveHandler () {
+  if (!categoryDetail.name) {
+    return ElMessage.error('请写上分类名!')
+  }
+  if (!categoryDetail.banner) {
+    return ElMessage.error('请上传banner图!')
+  }
+
+  if (handleType.value == 'add') {
+    ServerAPI.addCategory(categoryDetail)
+      .then(() => {
+        ElMessage.success('添加成功!')
+        handleClose()
+        getCateData()
+      })
+  }
+
+  if (handleType.value == 'edit') {
+    ServerAPI.editCategory(categoryDetail)
+      .then(res=> {
+        ElMessage.success('修改成功!')
+        handleClose()
+        getCateData()
+      })
+  }
+}
+function setRank(params) {
+  handleType.value = 'edit'
+  Object.assign(categoryDetail, params)
+  saveHandler()
+}
+function uploadHandler (file) {
+  const ImgForm = new FormData()
+  ImgForm.append('file',file.raw)
+  ServerAPI.picUpload(ImgForm)
+  .then(res => {
+    categoryDetail.banner = res.imageUrl
+    tempUrl.value = file.url
+    })
+}
+function setIdColumn ({ row, column, rowIndex }) { // 设置栏目样式
+  if (column.property == 'id') {
+    return 'cell_nowrap'
+  }
+}
+function getCateData () {
+  ServerAPI.getCategoryList()
+    .then(res => {
+      categoryData.value = res.data
+    })
+}
+onMounted(() => {
+  getCateData()
+})
+</script>
+
+<style lang="scss" scoped>
+#categoryManager {
+  margin: 10px;
+  .categoryImgUploader {
+    :deep(.el-upload) {
+      width: 396px;
+      height: 88px;
+    }
+  }
+  .cate_img_previewer {
+    width: 396px;
+    height: 88px;
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 3px;
+    &:hover {
+      background-color: rgba(0,0,0,.5);
+      .el-icon {
+        opacity: 1;
+        color: #fff;
+      }
+    }
+    .el-icon {
+      opacity: 0;
+      cursor: pointer;
+    }
+    .el-icon:first-child {
+      margin-right: 20px;
+    }
+  }
+}
+</style>

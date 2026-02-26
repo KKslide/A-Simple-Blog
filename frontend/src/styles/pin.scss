@@ -1,0 +1,72 @@
+.pin-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.count {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  color: #fff;
+  max-width: 30px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* 涟漪效果 */
+.pin-container::before,
+.pin-container::after {
+  content: '';
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  opacity: 0.6;
+  position: absolute;
+  bottom: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.7),
+              inset 0 0 10px 2px rgba(255, 0, 0, 0.7);
+  transform: scale(0);
+}
+
+.pin-container::before {
+  animation: 1.5s linear 0s infinite forwards blink;
+}
+
+.pin-container::after {
+  animation: 1.5s linear 0.8s infinite forwards blink;
+}
+
+/* 图钉 */
+.pin {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 50% 30%, #ff8a8a, #d32f2f, #b71c1c);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  margin-bottom: 25px;
+  /* 调整图钉相对于涟漪的位置 */
+  filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.8));
+  z-index: 10;
+}
+
+@keyframes blink {
+  0% {
+    transform: scale(0.1);
+  }
+
+  50% {
+    transform: scale(0.8);
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0.1;
+  }
+}

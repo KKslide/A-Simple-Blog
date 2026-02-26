@@ -1,0 +1,146 @@
+.el-header,
+.el-footer {
+  width: 100%;
+  line-height: 60px;
+  position: fixed;
+  z-index: 5;
+  background-color: #fff;
+}
+
+.el-header {
+  top: 10px;
+  .router_link {
+    a {
+      transition: all;
+      &.active,
+      &:hover {
+        border-bottom: 1px solid #000;
+        font-weight: bold;
+      }
+    }
+  }
+}
+
+.el-footer {
+  bottom: 10px;
+  text-align: center;
+}
+
+.el-header.isHome {
+  background-color: inherit;
+  .router_link {
+    a {
+      color: #9d9d9d;
+      transition: color .2s;
+      &:hover {
+        color: #fff;
+      }
+    }
+  }
+}
+
+.el-footer.isHome {
+  background-color: inherit;
+}
+
+.el-main {
+  margin: calc(60px + 10px) 0px;
+  padding-top: 0 !important;
+}
+
+.site_content {
+  min-height: calc(100vh - 20px);
+}
+
+#site-border-top,
+#site-border-bottom,
+#site-border-left,
+#site-border-right {
+  background: #000;
+  position: fixed;
+  z-index: 999;
+}
+
+#site-border-left,
+#site-border-right {
+  top: 0;
+  bottom: 0;
+  width: 10px;
+}
+
+#site-border-left {
+  left: 0;
+}
+
+#site-border-right {
+  right: 0;
+}
+
+#site-border-top,
+#site-border-bottom {
+  left: 0;
+  right: 0;
+  height: 10px;
+}
+
+#site-border-top {
+  top: 0;
+}
+
+#site-border-bottom {
+  bottom: 0;
+}
+
+.el-container {
+  min-height: inherit;
+}
+
+#log_content,#contact_me {
+  .el-textarea__inner:focus,
+  .el-input__wrapper.is-focus {
+    box-shadow: 0 0 0 1px #000 !important;
+  }
+}
+
+.entry-content {
+  line-height: 1.5;
+}
+
+#blog_list {
+  .searchDialog {
+    .el-dialog__headerbtn:hover{
+      .el-icon {
+        color: #000;
+      }
+    }
+    .el-input__wrapper.is-focus,
+    .el-select__wrapper.is-focused {
+      box-shadow: 0 0 0 1px #000 !important;
+    }
+    .el-dialog__footer {
+      .el-button--primary{
+        background-color: #282828 !important;
+        border: #fff;
+      }
+      .el-button--primary:focus,
+      .el-button--primary:hover {
+        background-color: #666 !important;
+        // color: #999 !important;
+        outline: #000 !important;
+      }
+    }
+  }
+}
+.search_cate_option {
+  .el-select-dropdown__item.is-selected {
+    color: #000 !important;
+  }
+}
+
+// 管理端, 顶部nav的右侧 el-menu 宽度
+.nav_opt_menu {
+  border-color: inherit !important;
+  .el-menu {
+    min-width: unset;
+  }
+}

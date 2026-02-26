@@ -1,0 +1,77 @@
+html {
+  font-size: 16px;
+}
+
+body {
+  padding: 0;
+  margin: 0;
+  &.client {
+    padding: 10px;
+    min-height: calc(100vh - 20px);
+  }
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover,
+  &:focus,
+  &:active {
+    text-decoration: none;
+    outline: none;
+  }
+}
+
+.text-center {
+  text-align: center;
+}
+
+// 定义一个循环范围，比如 0 ~ 50
+@for $i from 0 through 50 {
+  .mr-#{$i} {
+    margin-right: #{$i}px;
+  }
+}
+
+@for $i from 0 through 50 {
+  .ml-#{$i} {
+    margin-left: #{$i}px;
+  }
+}
+
+@for $i from 0 through 50 {
+  .mt-#{$i} {
+    margin-top: #{$i}px;
+  }
+}
+
+@for $i from 0 through 50 {
+  .mb-#{$i} {
+    margin-bottom: #{$i}px;
+  }
+}
+
+@for $i from 0 through 50 {
+  .pt-#{$i} {
+    padding-top: #{$i}px;
+  }
+}
+
+@for $i from 0 through 50 {
+  .pb-#{$i} {
+    padding-bottom: #{$i}px;
+  }
+}
+
+
+@for $i from 0 through 50 {
+  .fz-#{$i} {
+    font-size: #{$i}px;
+  }
+}
