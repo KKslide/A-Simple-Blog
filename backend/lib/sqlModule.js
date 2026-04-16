@@ -21,16 +21,16 @@ module.exports.doQuery = (options, callback) => {
       sql += `
           select 
           (select count(*) from article) total,
-          count(cm.a_id) comment_num,
+          count(cm.article_id) comment_num,
           cate.name as cate_name,
           a.* 
           from article a 
-          left join category cate on a.category = cate.id
-          left join comment cm on a.id=cm.a_id 
+          left join category cate on a.category_id = cate.id
+          left join comment cm on a.id=cm.article_id 
           and cm.is_del='0'
           where a.is_del='0'
           group by a.id 
-          order by a.add_time desc 
+          order by a.created_at desc 
           limit ${(pageNo - 1) * pageSize},${pageSize}`;
       break;
     default: // 2- 常规查询
@@ -70,7 +70,7 @@ module.exports.doAdd = (options, callback) => {
 module.exports.doDel = (options, callback) => {
   let id = options.id;
   let table = options.table;
-  let sql = `update ${table} set is_del='1' where ${table == "comment" ? "t_id" : "id"} = ${id}`;
+  let sql = `update ${table} set is_del='1' where id = ${id}`;
   connection.query(sql, (err, res) => {
     if (res.affectedRows == 1) {
       callback();
@@ -106,7 +106,7 @@ module.exports.doEdit = (options, callback) => {
 };
 /* 登陆查询 */
 module.exports.loginQuery = async (options, callback) => {
-  const sql = `SELECT id, username, isadmin FROM users WHERE username = ? AND password = ?`;
+  const sql = `SELECT id, username, is_admin FROM users WHERE username = ? AND password = ?`;
   const values = [options.username, options.password];
   try {
     const data = await connection.queryAsync(sql, values);
@@ -127,7 +127,7 @@ module.exports.getDashboardData = async function (callback) {
     const statsSql = `
       SELECT
           (SELECT COUNT(*) FROM visitors) AS visitTotal,
-          (SELECT COUNT(*) FROM visitors WHERE DATE(time) = CURDATE()) AS visitToday,
+          (SELECT COUNT(*) FROM visitors WHERE DATE(visited_at) = CURDATE()) AS visitToday,
           (SELECT COUNT(*) FROM users) AS userNum,
           COUNT(a.id) AS arcticleNum,
           COUNT(CASE WHEN c.name = 'Fun' THEN 1 ELSE NULL END) AS Fun,
@@ -138,17 +138,17 @@ module.exports.getDashboardData = async function (callback) {
       FROM 
           article a
       LEFT JOIN 
-          category c ON a.category = c.id;
+          category c ON a.category_id = c.id;
     `;
     // --- 24小时访问量 ---
     const timelineSql = `
       SELECT 
-          HOUR(time) AS hour, 
+          HOUR(visited_at) AS hour, 
           COUNT(*) AS count 
       FROM 
           visitors 
       WHERE 
-          time >= NOW() - INTERVAL 24 HOUR 
+          visited_at >= NOW() - INTERVAL 24 HOUR 
       GROUP BY 
           hour;
     `;
@@ -205,7 +205,7 @@ module.exports.getDashboardData = async function (callback) {
 /* 文章评论管理查询 */
 module.exports.queryCommentList = function (options, callback) {
   let id = options.id;
-  let sql = ` select * from comment where a_id=${id} and is_del='0' `;
+  let sql = ` select * from comment where article_id=${id} and is_del='0' `;
   connection.query(sql, (err, data) => {
     if (err) {
       console.log(err);
@@ -235,26 +235,27 @@ module.exports.queryMessageList = async (options, callback) => {
  */
 module.exports.getIndexPageData = async function (options, callback) {
   try {
-    const categoryQuery = "SELECT id, name, show_type FROM category WHERE is_del = '0' ORDER BY rank_index desc;";
+    const categoryQuery =
+      "SELECT id, name, show_type, banner_url, sort_order FROM category WHERE is_del = '0' ORDER BY sort_order desc;";
     // todo: 考虑是否删除掉 composition 和 其他多余字段的返回
     const articleQuery = `
       WITH RankedArticles AS (
           SELECT
-              a.id, a.title, cat.name AS category, a.description, a.add_time,
-              a.view_num, a.minpic_url, a.is_top, cat.rank_index, -- a.composition, a.video_src, a.is_show, a.is_del,
-              ROW_NUMBER() OVER(PARTITION BY a.category ORDER BY a.add_time DESC) AS rn
+              a.id, a.title, cat.name AS category, a.description, a.created_at,
+              a.view_count, a.cover_url, a.is_pinned, cat.sort_order, -- a.content, a.video_url, a.is_published, a.is_del,
+              ROW_NUMBER() OVER(PARTITION BY a.category_id ORDER BY a.created_at DESC) AS rn
           FROM article a
-          INNER JOIN category cat ON a.category = cat.id
-          WHERE a.is_del = '0' AND a.is_show = '1' AND cat.is_del = '0'
+          INNER JOIN category cat ON a.category_id = cat.id
+          WHERE a.is_del = '0' AND a.is_published = '1' AND cat.is_del = '0'
       )
       SELECT
           ra.*, IFNULL(c.comment_num, 0) AS comment_num
       FROM RankedArticles ra
       LEFT JOIN
-          (SELECT a_id, COUNT(*) AS comment_num FROM comment WHERE is_del = '0' GROUP BY a_id) c 
-      ON ra.id = c.a_id
+          (SELECT article_id, COUNT(*) AS comment_num FROM comment WHERE is_del = '0' GROUP BY article_id) c 
+      ON ra.id = c.article_id
       -- WHERE ra.rn <= 3
-      ORDER BY ra.rank_index, ra.add_time DESC;
+      ORDER BY ra.sort_order, ra.created_at DESC;
     `;
 
     const catList = await connection.queryAsync(categoryQuery);
@@ -272,11 +273,11 @@ module.exports.getIndexPageData = async function (options, callback) {
       delete article.rn;
 
       // 因为SQL返回的结果中已经包含了category名称，可以直接使用
-      if (blogList[article.category]&&article.is_top=='0') {
+      if (blogList[article.category]&&article.is_pinned=='0') {
         blogList[article.category].push(article);
       }
       // 把置顶文章填入单独key中
-      if (article.is_top == '1') {
+      if (article.is_pinned == '1') {
         blogList['TOP'].push(article)
       }
     });
@@ -316,28 +317,30 @@ module.exports.doSearch = async function (options, callback) {
       SELECT 
         (SELECT COUNT(*) 
          FROM article a2
-         LEFT JOIN category c2 ON a2.category = c2.id
+         LEFT JOIN category c2 ON a2.category_id = c2.id
          WHERE a2.is_del='0'
+           AND a2.is_published='1'
            AND c2.is_del='0'
-           ${category_id !== null ? " AND a2.category = ?" : ""}
+           ${category_id !== null ? " AND a2.category_id = ?" : ""}
            ${keyword !== null ? ` AND (a2.title LIKE ? OR a2.description LIKE ?)` : ""}
-           ${starttime !== null ? " AND a2.add_time >= ?" : ""}
-           ${endtime !== null ? " AND a2.add_time <= ?" : ""}
+           ${starttime !== null ? " AND a2.created_at >= ?" : ""}
+           ${endtime !== null ? " AND a2.created_at <= ?" : ""}
         ) AS total,
-        COUNT(cm.a_id) AS comment_num,
+        COUNT(cm.article_id) AS comment_num,
         cate.name AS cate_name,
         a.* 
       FROM article a
-      LEFT JOIN category cate ON a.category = cate.id
-      LEFT JOIN comment cm ON a.id = cm.a_id AND cm.is_del = '0'
+      LEFT JOIN category cate ON a.category_id = cate.id
+      LEFT JOIN comment cm ON a.id = cm.article_id AND cm.is_del = '0'
       WHERE a.is_del = '0'
+        AND a.is_published='1'
         AND cate.is_del = '0'
-        ${category_id !== null ? " AND a.category = ?" : ""}
+        ${category_id !== null ? " AND a.category_id = ?" : ""}
         ${keyword !== null ? ` AND (a.title LIKE ? OR a.description LIKE ?)` : ""}
-        ${starttime !== null ? " AND a.add_time >= ?" : ""}
-        ${endtime !== null ? " AND a.add_time <= ?" : ""}
+        ${starttime !== null ? " AND a.created_at >= ?" : ""}
+        ${endtime !== null ? " AND a.created_at <= ?" : ""}
       GROUP BY a.id
-      ORDER BY a.add_time DESC
+      ORDER BY a.created_at DESC
     `;
 
     // 参数数组（顺序要和上面 ? 一致，total 部分和主查询部分一致）
@@ -390,28 +393,27 @@ module.exports.getContentDetail = async function (options, callback) {
           SELECT
               a.id,
               a.title,
-              a.category AS category_id,
+              a.category_id AS category_id,
               c.name AS category,
-              c.banner,
-              a.composition,
+              a.content,
               a.description,
-              a.add_time,
-              a.view_num,
-              a.video_src,
-              a.minpic_url,
-              a.is_show,
+              a.created_at,
+              a.view_count,
+              a.video_url,
+              a.cover_url,
+              a.is_published,
               a.is_del,
               -- 修改部分：使用 COUNT() 作为判断条件
               -- 如果评论数量大于0，则聚合评论，否则返回空数组
-              IF(COUNT(comm.t_id) > 0,
+              IF(COUNT(comm.id) > 0,
                   JSON_ARRAYAGG(
                       JSON_OBJECT(
-                          't_id', comm.t_id,
-                          'a_id', comm.a_id,
-                          'user', comm.user,
-                          'time', comm.time,
+                          'id', comm.id,
+                          'article_id', comm.article_id,
+                          'nickname', comm.nickname,
+                          'created_at', comm.created_at,
                           'ip', comm.ip,
-                          'comment', comm.comment,
+                          'content', comm.content,
                           'is_del', comm.is_del
                       )
                   ),
@@ -420,13 +422,13 @@ module.exports.getContentDetail = async function (options, callback) {
           FROM
               article a
           JOIN
-              category c ON a.category = c.id
+              category c ON a.category_id = c.id
           LEFT JOIN
-              comment comm ON a.id = comm.a_id AND comm.is_del = '0'
+              comment comm ON a.id = comm.article_id AND comm.is_del = '0'
           WHERE
               a.id = ?
               AND a.is_del = '0'
-              AND a.is_show = '1'
+              AND a.is_published = '1'
           GROUP BY
               a.id; -- GROUP BY 主键 a.id 即可，其他 a.* 和 c.* 字段在MySQL中被认为是功能依赖于主键的
   `;
@@ -442,41 +444,39 @@ module.exports.getContentDetail = async function (options, callback) {
     cur.comment = JSON.parse(cur.comment);
   }
 
-  if (cur.composition && typeof cur.composition == "string") {
+  if (cur.content && typeof cur.content == "string") {
     console.log('查看服务器IP==>>>>>.', utils.getServerIp())
-    cur.composition = cur.composition
+    cur.content = cur.content
       .replaceAll('127.0.0.1', utils.getServerIp())
       .replaceAll('localhost', utils.getServerIp());
   }
 
-  const category = cur.category_id;
-  const addTime = formatDateToSQLString(cur.add_time);
+  const categoryId = cur.category_id;
+  const addTime = formatDateToSQLString(cur.created_at);
 
   const prevSql = `SELECT a.*
                    FROM article a
-                   JOIN category c ON a.category = c.id
-                   WHERE a.category = ?
+                   WHERE a.category_id = ?
                      AND a.is_del = '0'
-                     AND a.is_show = '1'
-                     AND a.add_time < ?
-                   ORDER BY a.add_time DESC
+                     AND a.is_published = '1'
+                     AND a.created_at < ?
+                   ORDER BY a.created_at DESC
                    LIMIT 1;`;
-  const [prev] = await connection.queryAsync(prevSql, [category, addTime]);
+  const [prev] = await connection.queryAsync(prevSql, [categoryId, addTime]);
 
   const nextSql = `SELECT a.*
                    FROM article a
-                   JOIN category c ON a.category = c.id
-                   WHERE a.category = ?
+                   WHERE a.category_id = ?
                      AND a.is_del = '0'
-                     AND a.is_show = '1'
-                     AND a.add_time > ?
-                   ORDER BY a.add_time ASC
+                     AND a.is_published = '1'
+                     AND a.created_at > ?
+                   ORDER BY a.created_at ASC
                    LIMIT 1;`;
-  const [next] = await connection.queryAsync(nextSql, [category, addTime]);
+  const [next] = await connection.queryAsync(nextSql, [categoryId, addTime]);
 
-  // 新增viewNum
-  const viewnumSql = `update article set view_num=${++cur.view_num} where id=${id}`;
-  await connection.queryAsync(viewnumSql);
+  // 新增viewCount
+  await connection.queryAsync(`update article set view_count=view_count+1 where id=?`, [id]);
+  cur.view_count = (cur.view_count ?? 0) + 1;
 
   const res = {
     prev: prev || null,

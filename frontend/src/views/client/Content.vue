@@ -3,14 +3,14 @@
     <el-row>
       <el-col :span="16" :offset="4" :xs="{span:24, offset:0}">
         <div id="content_banner">
-          <span style="display: none;">{{ BaseUrl + contentObj.banner }}</span>
-          <el-image :src="BaseUrl + contentObj.banner" style="width: 100%; height: 120px;" fit="contain"></el-image>
+          <span style="display: none;">{{ BaseUrl + contentObj.cover_url }}</span>
+          <el-image :src="BaseUrl + contentObj.cover_url" style="width: 100%; height: 120px;" fit="contain"></el-image>
         </div>
         <PageTitle :title="contentObj.title" />
         <div class="content_info">
           <div class="c_i_icon view">
             <el-icon size="14"><View /></el-icon>
-            <span>{{ contentObj?.view_num || 0 }}</span>
+            <span>{{ contentObj?.view_count || 0 }}</span>
           </div>
           <span class="split"></span>
           <div class="c_i_icon comment">
@@ -25,16 +25,16 @@
           <span class="split"></span>
           <div class="c_i_icon time">
             <el-icon size="14"><Clock /></el-icon>
-            <span>{{ new Date(contentObj?.add_time||0).Format('yyyy-MM-dd hh:mm:ss') }}</span>
+            <span>{{ new Date(contentObj?.created_at||0).Format('yyyy-MM-dd hh:mm:ss') }}</span>
           </div>
         </div>
-        <div ref="contentRef" class="content_html" v-html="contentObj?.composition"></div>
+        <div ref="contentRef" class="content_html" v-html="contentObj?.content"></div>
 
         <!-- 视频部分 -->
         <div class="plyr-wrapper" v-if="contentObj.category == 'Vlog' && showPlayer">
           <vue-plyr>
-            <video :key="contentObj.video_src" controls crossorigin playsinline :poster="BaseUrl + contentObj.minpic_url">
-              <source :src="BaseUrl + contentObj.video_src" type="video/mp4" />
+            <video :key="contentObj.video_url" controls crossorigin playsinline :poster="BaseUrl + contentObj.cover_url">
+              <source :src="BaseUrl + contentObj.video_url" type="video/mp4" />
             </video>
           </vue-plyr>
         </div>
@@ -85,9 +85,9 @@
           <el-col :span="23" :offset=1>
             <div class="content_comment_list">
               <div class="content_comment_item" v-for="(item, index) in contentObj?.comment || []" :key="index">
-                <div class="c_m_i_detail mail">{{ item.user }}:</div>
-                <div class="c_m_i_detail content">{{ item.comment }}</div>
-                <div class="c_m_i_detail time">{{ new Date(item.time).Format('yyyy-MM-dd hh:mm:ss') }}</div>
+                <div class="c_m_i_detail mail">{{ item.nickname }}:</div>
+                <div class="c_m_i_detail content">{{ item.content }}</div>
+                <div class="c_m_i_detail time">{{ new Date(item.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</div>
                 <el-divider />
               </div>
             </div>
@@ -155,13 +155,13 @@ function sendComment(data) {
     if (valid) {
       const { id: contentid } = contentObj.value
       const { comment, name: visitor } = data
-      const params = { contentid, comment, visitor }
+      const params = { contentid, nickname: visitor, content: comment }
       ClientAPI.postBlogComment(params)
         .then(res => {
           contentObj.value.comment.unshift({
-            user: visitor,
-            comment,
-            time: new Date().Format('yyyy-MM-dd hh:mm:ss')
+            nickname: visitor,
+            content: comment,
+            created_at: new Date().Format('yyyy-MM-dd hh:mm:ss')
           })
           resetForm()
           ElMessage({
@@ -214,7 +214,7 @@ onMounted(() => {
   getContentData()
 })
 watch(
-  () => contentObj.value?.composition,
+  () => contentObj.value?.content,
   async () => {
     await nextTick()
     contentRef.value

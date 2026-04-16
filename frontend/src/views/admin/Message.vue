@@ -1,13 +1,13 @@
 <template>
   <div id="messageManager">
     <el-table :data="msgList" :border="true" style="width: 100%">
-      <el-table-column prop="add_time" label="日期" min-width="100">
+      <el-table-column prop="created_at" label="日期" min-width="100">
         <template #default="scope">
-          <p>{{ new Date(scope.row.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="viewer" label="用户/邮箱"></el-table-column>
-      <el-table-column prop="message" label="内容"></el-table-column>
+      <el-table-column prop="nickname" label="用户/邮箱"></el-table-column>
+      <el-table-column prop="content" label="内容"></el-table-column>
       <el-table-column label="操作" width="150">
         <template #default="scope">
           <el-button size="small" @click="checkMsg(scope.row)">查看</el-button>

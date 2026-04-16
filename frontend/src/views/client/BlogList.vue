@@ -23,7 +23,7 @@
               >
                 <el-carousel-item v-for="(item, index) in blogList['TOP']" :key="item.id" >
                   <div class="top_content" @click="handleItemClick(item.id, index)">
-                    <el-image :src="BaseUrl + item.minpic_url" fit="cover" style="width: 100%; height: 100%;"></el-image>
+                    <el-image :src="BaseUrl + item.cover_url" fit="cover" style="width: 100%; height: 100%;"></el-image>
                     <h4 class="top_title">{{ item.title }} >></h4>
                   </div>
                 </el-carousel-item>
@@ -46,7 +46,7 @@
                       <el-icon size="14">
                         <View />
                       </el-icon>
-                      <span>{{ sub_item.view_num }}</span>
+                      <span>{{ sub_item.view_count }}</span>
                     </div>
                     <span class="split"></span>
                     <div class="info_icon comment">
@@ -60,7 +60,7 @@
                       <el-icon size="14">
                         <Clock />
                       </el-icon>
-                      <span>{{ new Date(sub_item.add_time).Format('yyyy-MM-dd') }}</span>
+                      <span>{{ new Date(sub_item.created_at).Format('yyyy-MM-dd') }}</span>
                     </div>
                     <span class="split"></span>
                     <div class="info_icon category">
@@ -74,7 +74,7 @@
                     <p>{{ sub_item.description }}</p>
                   </div>
                   <div class="b_i_c_img" @click="checkContent(sub_item.id)">
-                    <el-image :src="BaseUrl + sub_item.minpic_url" fit="cover" style="width: 100%; height: 250px;"></el-image>
+                    <el-image :src="BaseUrl + sub_item.cover_url" fit="cover" style="width: 100%; height: 250px;"></el-image>
                   </div>
                   <div class="b_i_c_read" @click="checkContent(sub_item.id)">{{ texts.readText }} >></div>
                   <el-divider />

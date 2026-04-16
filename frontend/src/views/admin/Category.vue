@@ -3,7 +3,7 @@
     <el-table :data="categoryData" :border="true" style="width: 100%" :cell-class-name="setIdColumn">
       <el-table-column prop="id" label="分类ID"></el-table-column>
       <el-table-column prop="name" label="分类名称"></el-table-column>
-      <el-table-column prop="rank_index" label="顺序" min-width="120">
+      <el-table-column prop="sort_order" label="顺序" min-width="120">
         <template #header>
           顺序
           <el-tooltip
@@ -16,22 +16,29 @@
           </el-tooltip>
         </template>
         <template #default="scope">
-          <el-input-number :min="0" :max="100" v-model="scope.row.rank_index" size="small" @change="setRank(scope.row)" />
+          <el-input-number :min="0" :max="100" v-model="scope.row.sort_order" size="small" @change="setRank(scope.row)" />
         </template>
       </el-table-column>
-      <el-table-column prop="add_time" label="新增时间" min-width="200">
+      <el-table-column prop="created_at" label="新增时间" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="edit_time" label="上次修改" min-width="200">
+      <el-table-column prop="updated_at" label="上次修改" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.edit_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.updated_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="banner" label="分类缩略图" min-width="150">
+      <el-table-column prop="banner_url" label="分类缩略图" min-width="150">
         <template #default="scope">
-          <el-image style="width: 150px; height: 34px" :src="BaseUrl + scope.row.banner" fit="cover"></el-image>
+          <el-image
+            style="width: 150px;
+            height: 34px"
+            :src="scope.row.banner_url.startsWith('http')
+              ? scope.row.banner_url
+              : BaseUrl + scope.row.banner_url"
+            fit="cover"
+          />
         </template>
       </el-table-column>
       <el-table-column label="操作" min-width="150">
@@ -106,8 +113,8 @@ const dialogVisible = ref(false)
 const categoryDetail = reactive({
   id: '',
   name: '',
-  banner: '',
-  rank_index: 0
+  banner_url: '',
+  sort_order: 0
 })
 const bannerWidth = ref(396)
 const bannerHeight = ref(86)
@@ -117,7 +124,7 @@ function edit (row) {
   handleType.value = 'edit'
   dialogVisible.value = true
   Object.assign(categoryDetail, row)
-  tempUrl.value = BaseUrl + row.banner
+  tempUrl.value = row.banner_url.startsWith('http') ? row.banner_url : BaseUrl + row.banner_url
 }
 function del (id) {
   ServerAPI.delCategory({ id })
@@ -133,7 +140,7 @@ function open () {
 function handleClose () {
   categoryDetail.id = ''
   categoryDetail.name = ''
-  categoryDetail.banner = ''
+  categoryDetail.banner_url = ''
   tempUrl.value = ''
   cateImgFiles.value = []
   dialogVisible.value = false
@@ -142,7 +149,7 @@ function saveHandler () {
   if (!categoryDetail.name) {
     return ElMessage.error('请写上分类名!')
   }
-  if (!categoryDetail.banner) {
+  if (!categoryDetail.banner_url) {
     return ElMessage.error('请上传banner图!')
   }
 
@@ -174,7 +181,7 @@ function uploadHandler (file) {
   ImgForm.append('file',file.raw)
   ServerAPI.picUpload(ImgForm)
   .then(res => {
-    categoryDetail.banner = res.imageUrl
+    categoryDetail.banner_url = res.imageUrl
     tempUrl.value = file.url
     })
 }
@@ -201,6 +208,7 @@ onMounted(() => {
     :deep(.el-upload) {
       width: 396px;
       height: 88px;
+      overflow: hidden;
     }
   }
   .cate_img_previewer {

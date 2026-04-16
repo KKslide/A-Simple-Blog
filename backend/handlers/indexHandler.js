@@ -36,11 +36,10 @@ module.exports.Comment = (req, res) => {
     table: "comment",
     id: req.body.contentid || req.query.contentid,
     data: {
-      a_id: req.body.contentid || req.query.contentid,
-      user: req.body.visitor || req.query.visitor || ip,
-      comment: req.body.comment || req.query.body.comment,
+      article_id: req.body.contentid || req.query.contentid,
+      nickname: req.body.nickname || req.query.nickname || ip,
+      content: req.body.content || req.query.content,
       ip: ip,
-      time: util.getNow(),
     },
   };
   dbMoudle.doAdd(opt, (err, data) => {
@@ -68,9 +67,8 @@ module.exports.leaveMessage = (req, res) => {
   var opt = {
     table: "messages",
     data: {
-      add_time: util.getNow(),
-      viewer: req.query.viewer || req.body.viewer,
-      message: req.query.message || req.body.message,
+      nickname: req.query.nickname || req.body.nickname,
+      content: req.query.content || req.body.content,
       ip: getIP(req),
     },
   };
@@ -89,7 +87,7 @@ module.exports.visitRecord = (req, res) => {
     table: "visitors",
     data: {
       ip: getIP(req),
-      time: util.getNow(),
+      visited_at: util.getNow(),
     },
   };
   dbMoudle.doAdd(opt, (err, data) => {

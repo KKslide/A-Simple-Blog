@@ -38,10 +38,11 @@ router.get("/map", (req, res) => {
 
 /* ********* 前端 ********* */
 /* 获取blog列表数据 或 vlog列表数据 */
-router.get("/getpage", handler.getIndexPage);
+router.get("/page", handler.getIndexPage);
+/* bloglist页面搜索 */
 router.post("/search", handler.searchIndexPage);
 /* 获取详情页 */
-router.post("/getcontent", handler.getContentPage);
+router.post("/content", handler.getContentPage);
 /* 评论文章 */
 router.post("/comment", handler.Comment);
 

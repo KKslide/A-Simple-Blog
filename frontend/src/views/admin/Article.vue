@@ -4,12 +4,12 @@
       <el-table-column prop="id" label="文章ID" min-width="80"></el-table-column>
       <el-table-column prop="title" label="分文章标题" min-width="300"></el-table-column>
       <el-table-column prop="cate_name" label="文章分类" min-width="100"></el-table-column>
-      <el-table-column prop="add_time" label="添加时间" min-width="200">
+      <el-table-column prop="created_at" label="添加时间" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="view_num" label="阅读量" min-width="100"></el-table-column>
+      <el-table-column prop="view_count" label="阅读量" min-width="100"></el-table-column>
       <el-table-column prop="comment_num" label="评论" min-width="100">
         <template #default="scope">
           <el-button v-if="!!scope.row.comment_num" type="primary" text @click="checkComment(scope.row)">
@@ -18,10 +18,10 @@
           <el-button v-else type="info" text disabled>0</el-button>
         </template>
       </el-table-column>
-      <el-table-column prop="is_top" label="置顶" min-width="100">
+      <el-table-column prop="is_pinned" label="置顶" min-width="100">
         <template #default="scope">
            <el-switch
-            v-model="scope.row.is_top"
+            v-model="scope.row.is_pinned"
             inline-prompt
             style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
             active-value="1"
@@ -32,10 +32,10 @@
           />
         </template>
       </el-table-column>
-      <el-table-column prop="is_show" label="显示" min-width="100">
+      <el-table-column prop="is_published" label="显示" min-width="100">
         <template #default="scope">
            <el-switch
-            v-model="scope.row.is_show"
+            v-model="scope.row.is_published"
             inline-prompt
             style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
             active-value="1"
@@ -98,15 +98,15 @@
             <el-input v-model="articleFrom.title" autocomplete="off"></el-input>
           </el-form-item>
           <!-- 文章分类 -->
-          <el-form-item label="文章分类"  prop="category" class="item_category">
-            <el-select v-model="articleFrom.category" placeholder="请选文章分类">
+          <el-form-item label="文章分类"  prop="category_id" class="item_category">
+            <el-select v-model="articleFrom.category_id" placeholder="请选文章分类">
               <el-option v-for="(v,i) in categoryData" :key="v.id" :label="v.name" :value="'' +v.id" ></el-option>
             </el-select>
           </el-form-item>
           <!-- 是否显示 -->
-          <el-form-item label="是否显示" prop="is_show">
+          <el-form-item label="是否显示" prop="is_published">
             <el-switch
-              v-model="articleFrom.is_show"
+              v-model="articleFrom.is_published"
               active-color="#13ce66"
               inactive-color="#ff4949"
               active-value="1"
@@ -114,9 +114,9 @@
             ></el-switch>
           </el-form-item>
           <!-- 是否置顶 -->
-          <el-form-item label="是否置顶" prop="is_top">
+          <el-form-item label="是否置顶" prop="is_pinned">
             <el-switch
-              v-model="articleFrom.is_top"
+              v-model="articleFrom.is_pinned"
               active-color="#13ce66"
               inactive-color="#ff4949"
               active-value="1"
@@ -138,15 +138,15 @@
             <el-input v-model="articleFrom.description" autocomplete="off"></el-input>
           </el-form-item>
           <!-- 视频链接 -->
-          <el-form-item v-if="articleFrom.category==34" label="视频链接" prop="video_src">
-            <el-input v-model="articleFrom.video_src" autocomplete="off"></el-input>
+          <el-form-item v-if="articleFrom.category_id==34" label="视频链接" prop="video_url">
+            <el-input v-model="articleFrom.video_url" autocomplete="off"></el-input>
           </el-form-item>
           <!-- 文章封面图 -->
-          <el-form-item label="文章封面" prop="minpic_url">
+          <el-form-item label="文章封面" prop="cover_url">
             <el-upload
               action="#"
               class="article_minpic_uploader"
-              v-model="articleFrom.minpic_url"
+              v-model="articleFrom.cover_url"
               list-type="picture-card"
               :auto-upload="false"
               :show-file-list="false"
@@ -154,8 +154,8 @@
             >
               <template #default>
                 <img
-                  v-if="articleFrom.minpic_url"
-                  :src="BaseUrl + articleFrom.minpic_url"
+                  v-if="articleFrom.cover_url"
+                  :src="BaseUrl + articleFrom.cover_url"
                   style="width:146px;height:94px;border-radius:5px;object-fit:cover;"
                 />
                 <div v-else>
@@ -163,14 +163,14 @@
                 </div>
               </template>
             </el-upload>
-            <div v-if="articleFrom.minpic_url" class="article_minpic_previewer">
+            <div v-if="articleFrom.cover_url" class="article_minpic_previewer">
               <el-icon size="20"><zoom-in /></el-icon>
-              <el-icon size="20" @click="articleFrom.minpic_url=''"><Delete /></el-icon>
+              <el-icon size="20" @click="articleFrom.cover_url=''"><Delete /></el-icon>
             </div>
           </el-form-item>
           <!-- 文章内容 -->
-          <el-form-item label="文章内容" prop="composition">
-            <el-input v-show="false" v-model="articleFrom.composition"></el-input>
+          <el-form-item label="文章内容" prop="content">
+            <el-input v-show="false" v-model="articleFrom.content"></el-input>
             <div style="border: 1px solid #ccc;width:100%">
               <Toolbar
                 style="border-bottom: 1px solid #ccc;"
@@ -180,7 +180,7 @@
               />
               <Editor
                 style="height: 300px; overflow-y: hidden;"
-                v-model="articleFrom.composition"
+                v-model="articleFrom.content"
                 :defaultConfig="editorConfig"
                 :mode="mode"
                 @onCreated="handleCreated"
@@ -216,13 +216,13 @@
     >
       <template #default>
         <el-table :data="curComment.comments" :border="true" style="width: 100%">
-          <el-table-column prop="time" label="日期">
+          <el-table-column prop="created_at" label="日期">
             <template #default="scope">
-              <p>{{ new Date(scope.row.time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+              <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
             </template>
           </el-table-column>
-          <el-table-column prop="user" label="用户"></el-table-column>
-          <el-table-column prop="comment" label="评论内容"></el-table-column>
+          <el-table-column prop="nickname" label="用户"></el-table-column>
+          <el-table-column prop="content" label="评论内容"></el-table-column>
           <el-table-column label="操作">
             <template #default="scope">
               <el-button size="small" @click="checkCommentDetail(scope.row)">查看</el-button>
@@ -279,7 +279,7 @@ const handleCreated = (editor) => {
 }
 const handleChange = (editor) => {
   const html = editor.getHtml();
-  articleFrom.composition = html
+  articleFrom.content = html
 }
 const articleData = ref([])
 const categoryData = ref([])
@@ -290,24 +290,24 @@ const curPage = ref(1) // 当前页
 const articleFromRef = ref(null)
 const articleFrom = reactive({
   title: '',
-  category: null,
+  category_id: null,
   description: '',
-  is_show: '0',
-  is_top: '0',
+  is_published: '0',
+  is_pinned: '0',
   // is_built_in: '0',
-  composition: '',
-  video_src: '',
-  minpic_url: ''
+  content: '',
+  video_url: '',
+  cover_url: ''
 })
 const articleFromRules = reactive({
   title: [{ required: true, message: '请填写文章标题', trigger: 'blur' }],
-  is_show: [{ required: true }],
-  is_top: [{ required: true }],
-  category: [{ required: true, message: '请选择一个分类' }],
+  is_published: [{ required: true }],
+  is_pinned: [{ required: true }],
+  category_id: [{ required: true, message: '请选择一个分类' }],
   description: [{ required: true, message: '请填写文章描述', trigger: 'blur' }],
-  composition: [{ required: true, message: '请填写文章内容' }],
-  video_src: [{ required: true, message: '请完善视频连接' }],
-  minpic_url: [{ required: true, message: '请上传一张封面图' }]
+  content: [{ required: true, message: '请填写文章内容' }],
+  video_url: [{ required: true, message: '请完善视频连接' }],
+  cover_url: [{ required: true, message: '请上传一张封面图' }]
 })
 const showCropper = ref(false)
 const cropperFile = ref(null)
@@ -332,10 +332,10 @@ function checkComment(row) {
 }
 function checkCommentDetail(row) {}
 function delComment(row) {
-  ServerAPI.delArticleComment({id: row.t_id})
+  ServerAPI.delArticleComment({id: row.id})
     .then(() => {
       ElMessage.success('删除成功')
-      curComment.value.comments = curComment.value.comments.filter(v => v.t_id != row.t_id)
+      curComment.value.comments = curComment.value.comments.filter(v => v.id != row.id)
       curComment.value.comment_num--
     })
 }
@@ -344,7 +344,7 @@ async function edit(row) {
   drawerVisible.value = true
   Object.assign(articleFrom, row)
   await nextTick()
-  editorRef.value.setHtml(row.composition)
+  editorRef.value.setHtml(row.content)
 }
 async function toggleSomeKey(row) {
   Object.assign(articleFrom, row)
@@ -368,14 +368,14 @@ function handleCrop (files) {
 }
 function uploadHandler (file) {
   const imgData = new FormData();
-  const fileName = 'minpic_' + new Date().Format('yyyy_MM_dd_hh_mm_ss') + '.'
+  const fileName = 'cover_' + new Date().Format('yyyy_MM_dd_hh_mm_ss') + '.'
   const fileOfBlob = new File([file], fileName + file.type.split('/')[1]);
   imgData.append('file', fileOfBlob);
   imgData.image = fileOfBlob;
   ServerAPI.picUpload(imgData)
     .then(res => {
       ElMessage.success('封面上传成功~')
-      articleFrom.minpic_url = res.imageUrl
+      articleFrom.cover_url = res.imageUrl
       showCropper.value = false
       cropperFile.value = null
     })
@@ -434,12 +434,13 @@ function closeHandler() {
   drawerVisible.value = false
   Object.assign(articleFrom, {
     title: '',
-    category: null,
+    category_id: null,
     description: '',
-    is_show: '0',
-    composition: '',
-    video_src: '',
-    minpic_url: ''
+    is_published: '0',
+    is_pinned: '0',
+    content: '',
+    video_url: '',
+    cover_url: ''
   })
 }
 onMounted(async () => {

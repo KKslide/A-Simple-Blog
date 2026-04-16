@@ -6,7 +6,7 @@ class ClientAPI extends ApiHelper {
   }
 
   getBlogList(data) {
-    return this.get("/user/getpage", data);
+    return this.get("/user/page", data);
   }
 
   searchBlogList(params) {
@@ -14,7 +14,7 @@ class ClientAPI extends ApiHelper {
   }
 
   getBlogContent(data) {
-    return this.post("/user/getcontent", data);
+    return this.post("/user/content", data);
   }
 
   postBlogComment(data) {
@@ -22,7 +22,7 @@ class ClientAPI extends ApiHelper {
   }
 
   getVlogList(params) {
-    return this.get(`/user/getpage`, params);
+    return this.get(`/user/page`, params);
   }
 
   getWorkList(data) {

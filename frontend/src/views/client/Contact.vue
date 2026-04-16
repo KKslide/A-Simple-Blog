@@ -59,9 +59,9 @@
             <el-col :span="23" :offset="1">
               <div class="contact_msg_list">
                 <div class="contact_msg_item" v-for="item in messageList" :key="item.id">
-                  <div class="c_m_i_detail mail">{{ item.viewer }}:</div>
-                  <div class="c_m_i_detail content">{{ item.message }}</div>
-                  <div class="c_m_i_detail time">{{ new Date(item.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</div>
+                  <div class="c_m_i_detail mail">{{ item.nickname }}:</div>
+                  <div class="c_m_i_detail content">{{ item.content }}</div>
+                  <div class="c_m_i_detail time">{{ new Date(item.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</div>
                   <el-divider />
                 </div>
               </div>
@@ -105,8 +105,8 @@ function resetForm() {
 function getMessageList () {
   ClientAPI.getMessage().then(res => {
     messageList.value = res.sort((n,m)=>{
-      const nTime = new Date(n.add_time).getTime()
-      const mTime = new Date(m.add_time).getTime()
+      const nTime = new Date(n.created_at).getTime()
+      const mTime = new Date(m.created_at).getTime()
       return mTime - nTime
     })
   })
@@ -114,8 +114,8 @@ function getMessageList () {
 function sendMessage(data) {
   contactFormRef.value.validate(valid => {
     if (valid) {
-      let { email: viewer, message } = data
-      let params = { viewer, message }
+      let { email: nickname, message } = data
+      let params = { nickname, content: message }
       ClientAPI.postMessage(params)
         .then(() => {
           getMessageList()

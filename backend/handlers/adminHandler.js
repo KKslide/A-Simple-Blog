@@ -70,7 +70,7 @@ module.exports.getCategory = (req, res) => {
     pageNo: req.body.pageNo || 1,
     pageSize: req.body.pageSize || 10,
     type: req.body.serchType || null,
-    order: 'rank_index'
+    order: "sort_order",
   };
   dbMoudle.doQuery(opt, (err, data) => {
     res.json({ data });
@@ -78,15 +78,14 @@ module.exports.getCategory = (req, res) => {
 };
 /* 分类-新增 */
 module.exports.addCategory = (req, res) => {
-  const { name, banner, rank_index}  = req.body
+  const { name, banner_url, sort_order, show_type } = req.body;
   var obj = {
     table: "category",
     data: {
       name,
-      banner,
-      add_time: util.getNow(),
-      edit_time: util.getNow(),
-      rank_index
+      banner_url,
+      sort_order,
+      ...(show_type ? { show_type } : {}),
     },
   };
   dbMoudle.doAdd(obj, (err, data) => {
@@ -110,9 +109,9 @@ module.exports.editCategory = (req, res) => {
     id: req.body.id,
     data: {
       name: req.body.name,
-      banner: req.body.banner,
-      edit_time: util.getNow(),
-      rank_index: req.body.rank_index
+      banner_url: req.body.banner_url,
+      sort_order: req.body.sort_order,
+      ...(req.body.show_type ? { show_type: req.body.show_type } : {}),
     },
   };
   dbMoudle.doEdit(obj, () => {
@@ -139,13 +138,13 @@ module.exports.addArticle = (req, res) => {
     table: "article",
     data: {
       title: req.body.title,
-      category: req.body.category,
-      composition: req.body.content || req.body.composition,
+      category_id: req.body.category_id,
+      content: req.body.content,
       description: req.body.description,
-      add_time: util.getNow(),
-      view_num: 0,
-      minpic_url: req.body.minpic_url,
-      video_src: req.body.video_src,
+      cover_url: req.body.cover_url,
+      video_url: req.body.video_url,
+      is_published: req.body.is_published,
+      is_pinned: req.body.is_pinned,
     },
   };
   dbMoudle.doAdd(obj, (err, data) => {
@@ -169,13 +168,13 @@ module.exports.editArticle = (req, res) => {
     id: req.body.id,
     data: {
       title: req.body.title,
-      category: req.body.category,
-      composition: req.body.content || req.body.composition,
+      category_id: req.body.category_id,
+      content: req.body.content,
       description: req.body.description,
-      minpic_url: req.body.minpic_url,
-      video_src: req.body.video_src,
-      is_show: req.body.is_show,
-      is_top: req.body.is_top,
+      cover_url: req.body.cover_url,
+      video_url: req.body.video_url,
+      is_published: req.body.is_published,
+      is_pinned: req.body.is_pinned,
     },
   };
   dbMoudle.doEdit(opt, (err) => {
