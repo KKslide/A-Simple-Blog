@@ -30,7 +30,7 @@ module.exports.doQuery = (options, callback) => {
           and cm.is_del='0'
           where a.is_del='0'
           group by a.id 
-          order by a.addtime desc 
+          order by a.add_time desc 
           limit ${(pageNo - 1) * pageSize},${pageSize}`;
       break;
     default: // 2- 常规查询
@@ -240,9 +240,9 @@ module.exports.getIndexPageData = async function (options, callback) {
     const articleQuery = `
       WITH RankedArticles AS (
           SELECT
-              a.id, a.title, cat.name AS category, a.description, a.addtime,
-              a.viewnum, a.minpic_url, a.is_top, cat.rank_index, -- a.composition, a.video_src, a.is_show, a.is_del,
-              ROW_NUMBER() OVER(PARTITION BY a.category ORDER BY a.addtime DESC) AS rn
+              a.id, a.title, cat.name AS category, a.description, a.add_time,
+              a.view_num, a.minpic_url, a.is_top, cat.rank_index, -- a.composition, a.video_src, a.is_show, a.is_del,
+              ROW_NUMBER() OVER(PARTITION BY a.category ORDER BY a.add_time DESC) AS rn
           FROM article a
           INNER JOIN category cat ON a.category = cat.id
           WHERE a.is_del = '0' AND a.is_show = '1' AND cat.is_del = '0'
@@ -254,7 +254,7 @@ module.exports.getIndexPageData = async function (options, callback) {
           (SELECT a_id, COUNT(*) AS comment_num FROM comment WHERE is_del = '0' GROUP BY a_id) c 
       ON ra.id = c.a_id
       -- WHERE ra.rn <= 3
-      ORDER BY ra.rank_index, ra.addtime DESC;
+      ORDER BY ra.rank_index, ra.add_time DESC;
     `;
 
     const catList = await connection.queryAsync(categoryQuery);
@@ -321,8 +321,8 @@ module.exports.doSearch = async function (options, callback) {
            AND c2.is_del='0'
            ${category_id !== null ? " AND a2.category = ?" : ""}
            ${keyword !== null ? ` AND (a2.title LIKE ? OR a2.description LIKE ?)` : ""}
-           ${starttime !== null ? " AND a2.addtime >= ?" : ""}
-           ${endtime !== null ? " AND a2.addtime <= ?" : ""}
+           ${starttime !== null ? " AND a2.add_time >= ?" : ""}
+           ${endtime !== null ? " AND a2.add_time <= ?" : ""}
         ) AS total,
         COUNT(cm.a_id) AS comment_num,
         cate.name AS cate_name,
@@ -334,10 +334,10 @@ module.exports.doSearch = async function (options, callback) {
         AND cate.is_del = '0'
         ${category_id !== null ? " AND a.category = ?" : ""}
         ${keyword !== null ? ` AND (a.title LIKE ? OR a.description LIKE ?)` : ""}
-        ${starttime !== null ? " AND a.addtime >= ?" : ""}
-        ${endtime !== null ? " AND a.addtime <= ?" : ""}
+        ${starttime !== null ? " AND a.add_time >= ?" : ""}
+        ${endtime !== null ? " AND a.add_time <= ?" : ""}
       GROUP BY a.id
-      ORDER BY a.addtime DESC
+      ORDER BY a.add_time DESC
     `;
 
     // 参数数组（顺序要和上面 ? 一致，total 部分和主查询部分一致）
@@ -390,13 +390,13 @@ module.exports.getContentDetail = async function (options, callback) {
           SELECT
               a.id,
               a.title,
-              a.category AS categoryID,
+              a.category AS category_id,
               c.name AS category,
               c.banner,
               a.composition,
               a.description,
-              a.addtime,
-              a.viewnum,
+              a.add_time,
+              a.view_num,
               a.video_src,
               a.minpic_url,
               a.is_show,
@@ -449,8 +449,8 @@ module.exports.getContentDetail = async function (options, callback) {
       .replaceAll('localhost', utils.getServerIp());
   }
 
-  const category = cur.categoryID;
-  const addtime = formatDateToSQLString(cur.addtime);
+  const category = cur.category_id;
+  const addTime = formatDateToSQLString(cur.add_time);
 
   const prevSql = `SELECT a.*
                    FROM article a
@@ -458,10 +458,10 @@ module.exports.getContentDetail = async function (options, callback) {
                    WHERE a.category = ?
                      AND a.is_del = '0'
                      AND a.is_show = '1'
-                     AND a.addtime < ?
-                   ORDER BY a.addtime DESC
+                     AND a.add_time < ?
+                   ORDER BY a.add_time DESC
                    LIMIT 1;`;
-  const [prev] = await connection.queryAsync(prevSql, [category, addtime]);
+  const [prev] = await connection.queryAsync(prevSql, [category, addTime]);
 
   const nextSql = `SELECT a.*
                    FROM article a
@@ -469,13 +469,13 @@ module.exports.getContentDetail = async function (options, callback) {
                    WHERE a.category = ?
                      AND a.is_del = '0'
                      AND a.is_show = '1'
-                     AND a.addtime > ?
-                   ORDER BY a.addtime ASC
+                     AND a.add_time > ?
+                   ORDER BY a.add_time ASC
                    LIMIT 1;`;
-  const [next] = await connection.queryAsync(nextSql, [category, addtime]);
+  const [next] = await connection.queryAsync(nextSql, [category, addTime]);
 
   // 新增viewNum
-  const viewnumSql = `update article set viewnum=${++cur.viewnum} where id=${id}`;
+  const viewnumSql = `update article set view_num=${++cur.view_num} where id=${id}`;
   await connection.queryAsync(viewnumSql);
 
   const res = {

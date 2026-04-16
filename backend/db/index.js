@@ -8,20 +8,11 @@ const util = require("util");
 const pool = mysql.createPool({
     host: "localhost", // 在家
     user: "root",
-    password: "rootroot", // 在家
+    password: "root123456", // 在家
     port: 3306,
     database: "myblog",
     charset: 'utf8mb4'
 })
-
-// const pool = mysql.createPool({
-//     host: "175.178.150.182", // 在家
-//     user: "kk",
-//     password: "Lyk1105*", // 在家
-//     port: 3306,
-//     database: "myblog",
-//     charset: 'utf8mb4'
-// })
 
 pool.getConnection(err => {
     if (err) throw err;

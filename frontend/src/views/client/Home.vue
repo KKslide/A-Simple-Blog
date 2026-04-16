@@ -53,9 +53,9 @@ onBeforeUnmount(() => {
   document.body.removeEventListener('mousemove', handleMouseMove);
   typer.destroy()
 })
-async function sendVisit () {
-  return await clientApi.visit()
-}
+// async function sendVisit () {
+//   return await clientApi.visit()
+// }
 function setMouseEffect() {
   const body = document.body;
   const bg = document.getElementById('logo_bg');

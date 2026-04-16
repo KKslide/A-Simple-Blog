@@ -19,14 +19,14 @@
           <el-input-number :min="0" :max="100" v-model="scope.row.rank_index" size="small" @change="setRank(scope.row)" />
         </template>
       </el-table-column>
-      <el-table-column prop="addtime" label="新增时间" min-width="200">
+      <el-table-column prop="add_time" label="新增时间" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.addtime).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="edittime" label="上次修改" min-width="200">
+      <el-table-column prop="edit_time" label="上次修改" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.edittime).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.edit_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
       <el-table-column prop="banner" label="分类缩略图" min-width="150">

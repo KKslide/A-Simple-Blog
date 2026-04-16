@@ -46,7 +46,7 @@
                       <el-icon size="14">
                         <View />
                       </el-icon>
-                      <span>{{ sub_item.viewnum }}</span>
+                      <span>{{ sub_item.view_num }}</span>
                     </div>
                     <span class="split"></span>
                     <div class="info_icon comment">
@@ -60,7 +60,7 @@
                       <el-icon size="14">
                         <Clock />
                       </el-icon>
-                      <span>{{ new Date(sub_item.addtime).Format('yyyy-MM-dd') }}</span>
+                      <span>{{ new Date(sub_item.add_time).Format('yyyy-MM-dd') }}</span>
                     </div>
                     <span class="split"></span>
                     <div class="info_icon category">
@@ -299,7 +299,7 @@ onDeactivated(() => {
 watch(
   () => pageStore.blogList,
   val => {
-    if (!Object.keys(val).length) {
+    if (val && !Object.keys(val).length) {
       getList()
     }
   },

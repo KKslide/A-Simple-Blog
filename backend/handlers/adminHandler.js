@@ -84,8 +84,8 @@ module.exports.addCategory = (req, res) => {
     data: {
       name,
       banner,
-      addtime: util.getNow(),
-      edittime: util.getNow(),
+      add_time: util.getNow(),
+      edit_time: util.getNow(),
       rank_index
     },
   };
@@ -111,7 +111,7 @@ module.exports.editCategory = (req, res) => {
     data: {
       name: req.body.name,
       banner: req.body.banner,
-      edittime: util.getNow(),
+      edit_time: util.getNow(),
       rank_index: req.body.rank_index
     },
   };
@@ -142,8 +142,8 @@ module.exports.addArticle = (req, res) => {
       category: req.body.category,
       composition: req.body.content || req.body.composition,
       description: req.body.description,
-      addtime: util.getNow(),
-      viewnum: 0,
+      add_time: util.getNow(),
+      view_num: 0,
       minpic_url: req.body.minpic_url,
       video_src: req.body.video_src,
     },

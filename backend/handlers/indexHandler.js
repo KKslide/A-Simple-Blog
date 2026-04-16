@@ -68,7 +68,7 @@ module.exports.leaveMessage = (req, res) => {
   var opt = {
     table: "messages",
     data: {
-      addtime: util.getNow(),
+      add_time: util.getNow(),
       viewer: req.query.viewer || req.body.viewer,
       message: req.query.message || req.body.message,
       ip: getIP(req),

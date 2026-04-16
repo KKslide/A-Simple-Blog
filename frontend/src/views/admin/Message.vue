@@ -1,9 +1,9 @@
 <template>
   <div id="messageManager">
     <el-table :data="msgList" :border="true" style="width: 100%">
-      <el-table-column prop="addtime" label="日期" min-width="100">
+      <el-table-column prop="add_time" label="日期" min-width="100">
         <template #default="scope">
-          <p>{{ new Date(scope.row.addtime).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
       <el-table-column prop="viewer" label="用户/邮箱"></el-table-column>

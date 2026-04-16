@@ -3,7 +3,8 @@
     "module": "CommonJS",
     "allowJs": true,
     "checkJs": true,
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "ignoreDeprecations": "5.0"
   },
   "exclude": ["node_modules"]
 }

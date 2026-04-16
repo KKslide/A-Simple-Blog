@@ -10,7 +10,7 @@
         <div class="content_info">
           <div class="c_i_icon view">
             <el-icon size="14"><View /></el-icon>
-            <span>{{ contentObj?.viewnum || 0 }}</span>
+            <span>{{ contentObj?.view_num || 0 }}</span>
           </div>
           <span class="split"></span>
           <div class="c_i_icon comment">
@@ -25,7 +25,7 @@
           <span class="split"></span>
           <div class="c_i_icon time">
             <el-icon size="14"><Clock /></el-icon>
-            <span>{{ new Date(contentObj?.addtime||0).Format('yyyy-MM-dd hh:mm:ss') }}</span>
+            <span>{{ new Date(contentObj?.add_time||0).Format('yyyy-MM-dd hh:mm:ss') }}</span>
           </div>
         </div>
         <div ref="contentRef" class="content_html" v-html="contentObj?.composition"></div>

@@ -4,12 +4,12 @@
       <el-table-column prop="id" label="文章ID" min-width="80"></el-table-column>
       <el-table-column prop="title" label="分文章标题" min-width="300"></el-table-column>
       <el-table-column prop="cate_name" label="文章分类" min-width="100"></el-table-column>
-      <el-table-column prop="addtime" label="添加时间" min-width="200">
+      <el-table-column prop="add_time" label="添加时间" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.addtime).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ new Date(scope.row.add_time).Format('yyyy-MM-dd hh:mm:ss') }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="viewnum" label="阅读量" min-width="100"></el-table-column>
+      <el-table-column prop="view_num" label="阅读量" min-width="100"></el-table-column>
       <el-table-column prop="comment_num" label="评论" min-width="100">
         <template #default="scope">
           <el-button v-if="!!scope.row.comment_num" type="primary" text @click="checkComment(scope.row)">
