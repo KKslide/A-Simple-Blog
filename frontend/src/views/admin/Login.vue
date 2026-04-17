@@ -1,28 +1,45 @@
 <template>
   <div id="loginWrapper" ref="loginRef">
     <main>
-      <form class="form" @submit="submit">
+      <form class="form" @submit.prevent="submit">
         <div class="form__cover"></div>
         <div class="form__loader">
           <div class="spinner active">
             <svg class="spinner__circular" viewBox="25 25 50 50">
-              <circle class="spinner__path" cx="50" cy="50" r="20" fill="none" stroke-width="4"
-                stroke-miterlimit="10" />
+              <circle
+                class="spinner__path"
+                cx="50"
+                cy="50"
+                r="20"
+                fill="none"
+                stroke-width="4"
+                stroke-miterlimit="10"
+              />
             </svg>
           </div>
         </div>
         <div class="form__content">
           <h1 class="form__content_h1">Login</h1>
           <div class="styled-input">
-            <input type="text" class="styled-input__input" name="username" v-model="userForm.username" />
+            <input
+              type="text"
+              class="styled-input__input"
+              name="username"
+              v-model="userForm.username"
+            />
             <div class="styled-input__placeholder">
               <span class="styled-input__placeholder-text">Username</span>
             </div>
             <div class="styled-input__circle"></div>
           </div>
           <div class="styled-input">
-            <input type="password" class="styled-input__input" name="password" v-model="userForm.password"
-              @keydown="typing($event)" />
+            <input
+              type="password"
+              class="styled-input__input"
+              name="password"
+              v-model="userForm.password"
+              @keydown="typing"
+            />
             <div class="styled-input__placeholder">
               <span class="styled-input__placeholder-text">Password</span>
             </div>
@@ -43,7 +60,7 @@
               </span>
             </span>
           </button>
-          <button type="button" class="styled-button" @click="router.push({name:'home'})">
+          <button type="button" class="styled-button" @click="router.push({ name: 'home' })">
             <span class="styled-button__real-text-holder">
               <span class="styled-button__real-text">Home Page</span>
               <span class="styled-button__moving-block face">
@@ -64,95 +81,99 @@
   </div>
 </template>
 
-<script setup>
-import md5 from 'js-md5'
+<script setup lang="ts">
+import { md5 } from 'js-md5'
 import { useRouter } from 'vue-router'
-import { ref, reactive, onBeforeMount, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import ServerAPI from '@/api/server'
 import { ElMessage } from 'element-plus'
+import type { LoginResponse } from '@/types/api'
 import { useUserStore } from '@/stores/userStore'
+
+interface UserForm {
+  username: string
+  password: string
+}
+
 const UserStore = useUserStore()
-const userForm = reactive({
+const userForm = reactive<UserForm>({
   username: '',
   password: ''
 })
-const loginRef = ref(null)
+
+const loginRef = ref<HTMLElement | null>(null)
 const router = useRouter()
-onBeforeMount(() => {
-})
+
 onMounted(() => {
-  const placeholders = loginRef.value.querySelectorAll('.styled-input__placeholder-text'),
-    inputs = loginRef.value.querySelectorAll('.styled-input__input');
+  if (!loginRef.value) return
 
-  function placeholderAnimationIn (parent, action) {
-    var act = action ? 'add' : 'remove';
-    var letters = parent.querySelectorAll('.letter');
-    letters = [].slice.call(letters, 0);
-    if (!action) letters = letters.reverse();
-    letters.forEach(function (el, i) {
-      setTimeout(function () {
-        var contains = parent.classList.contains('filled');
-        if (action && !contains || !action && contains) return;
-        el.classList[act]('active');
-      }, 50 * i);
-    });
+  const placeholders = loginRef.value.querySelectorAll('.styled-input__placeholder-text')
+  const inputs = loginRef.value.querySelectorAll('.styled-input__input')
+
+  function placeholderAnimationIn(parent: Element, action: boolean) {
+    const act = action ? 'add' : 'remove'
+    const letters = parent.querySelectorAll('.letter')
+    const lettersArray = Array.from(letters)
+    if (!action) lettersArray.reverse()
+
+    lettersArray.forEach((el, i) => {
+      setTimeout(() => {
+        const contains = parent.classList.contains('filled')
+        if (action && !contains || (!action && contains)) return
+        el.classList[act]('active')
+      }, 50 * i)
+    })
   }
-  placeholders.forEach(function (el, i) {
-    var value = el.innerText,
-      html = '';
-    for (var _iterator = value, _isArray = Array.isArray(_iterator), _i = 0, _iterator = _isArray ? _iterator : _iterator[Symbol.iterator](); ;) {
-      var _ref;
 
-      if (_isArray) {
-        if (_i >= _iterator.length) break;
-        _ref = _iterator[_i++];
-      } else {
-        _i = _iterator.next();
-        if (_i.done) break;
-        _ref = _i.value;
-      }
-
-      var w = _ref;
-
-      if (!value) value = '&nbsp;';
-      html += '<span class="letter">' + w + '</span>';
+  placeholders.forEach((el) => {
+    const value = el.textContent || ''
+    let html = ''
+    for (const w of value) {
+      const char = w || '&nbsp;'
+      html += `<span class="letter">${char}</span>`
     }
-    el.innerHTML = html;
-  });
-  inputs.forEach(function (el) {
-    var parent = el.parentNode;
-    el.addEventListener('focus', function () {
-      parent.classList.add('filled');
-      placeholderAnimationIn(parent, true);
-    }, false);
-    el.addEventListener('blur', function () {
-      if (el.value.length) return;
-      parent.classList.remove('filled');
-      placeholderAnimationIn(parent, false);
-    }, false);
-  });
-  loginRef.value.classList.add('on-start');
-  loginRef.value.classList.add('document-loaded');
+    el.innerHTML = html
+  })
+
+  inputs.forEach((el) => {
+    const parent = el.parentNode as Element
+    el.addEventListener('focus', () => {
+      parent.classList.add('filled')
+      placeholderAnimationIn(parent, true)
+    }, false)
+    el.addEventListener('blur', () => {
+      if ((el as HTMLInputElement).value.length) return
+      parent.classList.remove('filled')
+      placeholderAnimationIn(parent, false)
+    }, false)
+  })
+
+  loginRef.value.classList.add('on-start')
+  loginRef.value.classList.add('document-loaded')
 })
+
 onBeforeUnmount(() => {
-  loginRef.value.classList = []
+  if (loginRef.value) {
+  loginRef.value.classList.remove('on-start', 'document-loaded')
+  }
 })
-function submit () {
+
+function submit() {
   const { username, password } = userForm
   ServerAPI.userLogin({ username, password: md5(password) })
-    .then(res => {
-        if (res.code == 1) {
-          UserStore.setUserInfo(res.userInfo)
-          ElMessage.success('登陆成功✌️')
-          router.push({ name: 'dashboard' })
-        }
-        else {
-          ElMessage.error(res.msg)
-        }
-      })
+    .then((res: LoginResponse) => {
+      if (res.code === 1) {
+        UserStore.setUserInfo({ ...res.userInfo, login: true })
+        ElMessage.success('登陆成功✌️')
+        router.push({ name: 'dashboard' })
+      } else {
+        ElMessage.error(res.msg || '登录失败')
+      }
+    })
 }
-function typing (e) {
-  if (e.keyCode == 13) {
+
+function typing(e: KeyboardEvent) {
+  if (e.keyCode === 13) {
     submit()
   }
 }
@@ -160,87 +181,58 @@ function typing (e) {
 
 <style lang="scss" scoped>
 #loginWrapper {
-
   main {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex !important;
-    -webkit-box-pack: center;
-    -ms-flex-pack: center;
+    display: flex;
     justify-content: center;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
-    background: #3f2766;
     background: #222;
-    background-image: repeating-linear-gradient(to bottom,
-        transparent 7px,
-        rgba(0, 0, 0, 0.8) 9px,
-        rgba(0, 0, 0, 0.8) 13px,
-        transparent 13px);
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 7px,
+      rgba(0, 0, 0, 0.8) 9px,
+      rgba(0, 0, 0, 0.8) 13px,
+      transparent 13px
+    );
   }
 
   .form {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
-    -webkit-box-pack: center;
-    -ms-flex-pack: center;
     justify-content: center;
     position: relative;
     width: 400px;
     height: 400px;
-    -ms-flex-negative: 0;
     flex-shrink: 0;
     padding: 20px;
     border-radius: 5px;
   }
 
   .form__loader {
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
     position: absolute;
     left: 0;
     top: 0;
     height: 100%;
     width: 100%;
-    -webkit-box-pack: center;
-    -ms-flex-pack: center;
     justify-content: center;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
     z-index: -4;
-    -webkit-transition: all 0.5s ease;
     transition: all 0.5s ease;
   }
 
   .form__content {
     text-align: center;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-pack: center;
-    -ms-flex-pack: center;
     justify-content: center;
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-    -ms-flex-direction: column;
     flex-direction: column;
     position: relative;
     opacity: 0;
-    -webkit-transform: translateY(10px);
     transform: translateY(10px);
-    -webkit-transition: all 0.5s ease 0.7s;
     transition: all 0.5s ease 0.7s;
   }
 
@@ -253,50 +245,41 @@ function typing (e) {
     z-index: -4;
     border-radius: 25px;
     overflow: hidden;
-    -webkit-transition: all 0.3s ease 0.8s;
     transition: all 0.3s ease 0.8s;
     box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
   }
 
   .form__cover:after {
-    content: "";
+    content: '';
     position: absolute;
     left: 0;
     top: 0;
     height: 100%;
     width: 100%;
-    /* background: #4d317a; */
     z-index: -4;
     border-radius: 50%;
-    -webkit-transition: all 1.5s ease 0.3s;
     transition: all 1.5s ease 0.3s;
-    -webkit-transform: scale(0);
     transform: scale(0);
   }
 
   .form__cover:before {
-    content: "";
+    content: '';
     position: absolute;
     left: 0;
     top: 0;
     height: 100%;
     width: 100%;
-    /* background: white; */
     z-index: -5;
     border-radius: 50%;
-    -webkit-transition: all 0.5s ease;
     transition: all 0.5s ease;
-    -webkit-transform: scale(0);
     transform: scale(0);
   }
 
   &.on-start .form__cover:before {
-    -webkit-transform: scale(0.15);
     transform: scale(0.15);
   }
 
   &.document-loaded .form__loader {
-    -webkit-transform: scale(0);
     transform: scale(0);
     opacity: 0;
     visibility: hidden;
@@ -304,7 +287,6 @@ function typing (e) {
 
   &.document-loaded .form__content {
     opacity: 1;
-    -webkit-transform: none;
     transform: none;
   }
 
@@ -313,17 +295,11 @@ function typing (e) {
   }
 
   &.document-loaded .form__cover:after {
-    -webkit-transform: scale(2);
     transform: scale(2);
   }
 
   &.document-loaded .form__cover:before {
-    -webkit-transition: opacity 0.3s ease 0.8s, -webkit-transform 2s ease;
-    transition: opacity 0.3s ease 0.8s, -webkit-transform 2s ease;
-    transition: transform 2s ease, opacity 0.3s ease 0.8s;
-    transition: transform 2s ease, opacity 0.3s ease 0.8s,
-      -webkit-transform 2s ease;
-    -webkit-transform: scale(2);
+    transition: opacity 0.3s ease 0.8s, transform 2s ease;
     transform: scale(2);
     opacity: 0;
   }
@@ -332,19 +308,16 @@ function typing (e) {
     font-size: 40px;
     margin: 15px 0 20px 0;
     letter-spacing: 0.05em;
-    color: #714cab;
+    color: #fff6a9;
     font-weight: 700;
     text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500,
       0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00, 0 0 98px #ff0000;
-    color: #fff6a9;
     animation: blink 5s infinite;
   }
 
   .styled-button {
     appearance: none;
-    -webkit-appearance: none;
     user-select: none;
-    -webkit-user-select: none;
     cursor: pointer;
     font-size: 14px;
     width: 100%;
@@ -352,7 +325,6 @@ function typing (e) {
     outline: none;
     background: none;
     position: relative;
-    /* color: #492e72; */
     color: #8b5dd1;
     border-radius: 3px;
     margin-bottom: 25px;
@@ -360,9 +332,6 @@ function typing (e) {
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.1em;
-    /* background: #714cac; */
-    /* background-color: rgba(255, 255, 255, 0.2); */
-    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     overflow: hidden;
   }
@@ -382,21 +351,13 @@ function typing (e) {
     top: 0;
     height: 100%;
     width: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
-    -webkit-box-pack: center;
-    -ms-flex-pack: center;
     justify-content: center;
-    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
 
   .styled-button__moving-block {
-    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
     position: absolute;
     left: 0;
@@ -408,43 +369,36 @@ function typing (e) {
 
   .styled-button__moving-block.back {
     color: white;
-    -webkit-transform: translateX(-100%);
     transform: translateX(-100%);
   }
 
   .styled-button__moving-block.back .styled-button__text-holder {
-    -webkit-transform: translateX(100%);
     transform: translateX(100%);
   }
 
   .styled-button:hover,
   .styled-button:active {
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    /* background: #7a51bb; */
     background-color: rgba(255, 255, 255, 0.2);
   }
 
   .styled-button:hover .face,
   .styled-button:active .face {
-    -webkit-transform: translateX(100%);
     transform: translateX(100%);
   }
 
   .styled-button:hover .face .styled-button__text-holder,
   .styled-button:active .face .styled-button__text-holder {
-    -webkit-transform: translateX(-100%);
     transform: translateX(-100%);
   }
 
   .styled-button:hover .back,
   .styled-button:active .back {
-    -webkit-transform: translateX(0);
     transform: translateX(0);
   }
 
   .styled-button:hover .back .styled-button__text-holder,
   .styled-button:active .back .styled-button__text-holder {
-    -webkit-transform: translateX(0);
     transform: translateX(0);
   }
 
@@ -458,7 +412,6 @@ function typing (e) {
     margin-bottom: 25px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 3px;
-    -webkit-transition: all 0.3s ease;
     transition: all 0.3s ease;
   }
 
@@ -474,7 +427,7 @@ function typing (e) {
   }
 
   .styled-input__circle:after {
-    content: "";
+    content: '';
     position: absolute;
     left: 16.5px;
     top: 19px;
@@ -484,17 +437,12 @@ function typing (e) {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 0 10px rgba(255, 255, 255, 0);
-    -webkit-transition: opacity 1s ease, -webkit-transform 0.6s ease;
-    transition: opacity 1s ease, -webkit-transform 0.6s ease;
-    transition: transform 0.6s ease, opacity 1s ease;
-    transition: transform 0.6s ease, opacity 1s ease,
-      -webkit-transform 0.6s ease;
+    transition: opacity 1s ease, transform 0.6s ease;
   }
 
   .styled-input__input {
     width: 100%;
     appearance: none;
-    -webkit-appearance: none;
     font-size: 14px;
     outline: none;
     background: none;
@@ -511,11 +459,7 @@ function typing (e) {
     top: 0;
     width: 100%;
     height: 100%;
-    display: -webkit-box;
-    display: -ms-flexbox;
     display: flex;
-    -webkit-box-align: center;
-    -ms-flex-align: center;
     align-items: center;
     z-index: -1;
     padding-left: 45px;
@@ -523,7 +467,6 @@ function typing (e) {
   }
 
   .styled-input__placeholder-text {
-    -webkit-perspective: 500px;
     perspective: 500px;
     display: inline-block;
   }
@@ -532,13 +475,10 @@ function typing (e) {
     display: inline-block;
     vertical-align: middle;
     position: relative;
-    -webkit-animation: letterAnimOut 0.25s ease forwards;
     animation: letterAnimOut 0.25s ease forwards;
-    text-shadow: 0 0 5px;
   }
 
   .styled-input__placeholder-text :deep(.letter.active) {
-    -webkit-animation: letterAnimIn 0.25s ease forwards;
     animation: letterAnimIn 0.25s ease forwards;
   }
 
@@ -551,175 +491,66 @@ function typing (e) {
   }
 
   .styled-input.filled .styled-input__circle:after {
-    -webkit-transform: scale(37);
     transform: scale(37);
     opacity: 0;
   }
 
-  @-webkit-keyframes letterAnimIn {
-    0% {
-      -webkit-transform: translate(0, 0);
-      transform: translate(0, 0);
-    }
-
-    25% {
-      -webkit-transform: translate(0, 10px);
-      transform: translate(0, 10px);
-      color: red;
-    }
-
-    45% {
-      -webkit-transform: translate(0, 10px);
-      transform: translate(0, 10px);
-      opacity: 0;
-      color: red;
-    }
-
-    55% {
-      -webkit-transform: translate(0, 10px);
-      transform: translate(0, 10px);
-      opacity: 0;
-    }
-
-    56% {
-      -webkit-transform: translate(-30px, -27px);
-      transform: translate(-30px, -27px);
-      opacity: 0;
-      color: #00ff6b;
-    }
-
-    76% {
-      color: #00ff6b;
-      opacity: 1;
-      -webkit-transform: translate(-30px, -27px);
-      transform: translate(-30px, -27px);
-    }
-
-    100% {
-      -webkit-transform: translate(-30px, -27px);
-      transform: translate(-30px, -27px);
-      opacity: 1;
-    }
-  }
-
   @keyframes letterAnimIn {
     0% {
-      -webkit-transform: translate(0, 0);
       transform: translate(0, 0);
     }
-
     25% {
-      -webkit-transform: translate(0, 10px);
       transform: translate(0, 10px);
       color: red;
     }
-
     45% {
-      -webkit-transform: translate(0, 10px);
       transform: translate(0, 10px);
       opacity: 0;
       color: red;
     }
-
     55% {
-      -webkit-transform: translate(0, 10px);
       transform: translate(0, 10px);
       opacity: 0;
     }
-
     56% {
-      -webkit-transform: translate(-30px, -27px);
       transform: translate(-30px, -27px);
       opacity: 0;
       color: #00ff6b;
     }
-
     76% {
       color: #00ff6b;
       opacity: 1;
-      -webkit-transform: translate(-30px, -27px);
       transform: translate(-30px, -27px);
     }
-
     100% {
-      -webkit-transform: translate(-30px, -27px);
       transform: translate(-30px, -27px);
       opacity: 1;
-    }
-  }
-
-  @-webkit-keyframes letterAnimOut {
-    0% {
-      -webkit-transform: translate(-30px, -27px);
-      transform: translate(-30px, -27px);
-      opacity: 1;
-    }
-
-    25% {
-      -webkit-transform: translate(-30px, -40px);
-      transform: translate(-30px, -40px);
-      opacity: 0;
-    }
-
-    45% {
-      -webkit-transform: translate(0, 10px);
-      transform: translate(0, 10px);
-      opacity: 0;
-    }
-
-    55% {
-      -webkit-transform: translate(0, 10px);
-      transform: translate(0, 10px);
-      opacity: 0;
-      color: red;
-    }
-
-    56% {
-      -webkit-transform: translate(0, 10px);
-      transform: translate(0, 10px);
-      color: red;
-    }
-
-    100% {
-      -webkit-transform: translate(0, 0);
-      transform: translate(0, 0);
     }
   }
 
   @keyframes letterAnimOut {
     0% {
-      -webkit-transform: translate(-30px, -27px);
       transform: translate(-30px, -27px);
       opacity: 1;
     }
-
     25% {
-      -webkit-transform: translate(-30px, -40px);
       transform: translate(-30px, -40px);
       opacity: 0;
     }
-
     45% {
-      -webkit-transform: translate(0, 10px);
       transform: translate(0, 10px);
       opacity: 0;
     }
-
     55% {
-      -webkit-transform: translate(0, 10px);
       transform: translate(0, 10px);
       opacity: 0;
       color: red;
     }
-
     56% {
-      -webkit-transform: translate(0, 10px);
       transform: translate(0, 10px);
       color: red;
     }
-
     100% {
-      -webkit-transform: translate(0, 0);
       transform: translate(0, 0);
     }
   }
@@ -729,16 +560,12 @@ function typing (e) {
     margin: auto;
     width: 50px;
     height: 50px;
-    -webkit-transition: all 0.2s ease 0s;
     transition: all 0.2s ease 0s;
   }
 
   .spinner__circular {
-    -webkit-animation: rotate 1s linear infinite;
     animation: rotate 1s linear infinite;
-    -webkit-animation-play-state: paused;
     animation-play-state: paused;
-    -webkit-transform-origin: center center;
     transform-origin: center center;
     position: absolute;
     width: 100%;
@@ -751,31 +578,11 @@ function typing (e) {
   .spinner__path {
     stroke-dasharray: 1, 200;
     stroke-dashoffset: 0;
-    -webkit-animation: dash 0.6s ease forwards 0.5s;
     animation: dash 0.6s ease forwards 0.5s;
     opacity: 0;
     stroke-linecap: round;
     stroke: #7b23ff;
-    -webkit-animation-play-state: running;
     animation-play-state: running;
-  }
-
-  @-webkit-keyframes dash {
-    0% {
-      stroke-dasharray: 1, 200;
-      stroke-dashoffset: 0;
-      opacity: 0;
-    }
-
-    50% {
-      stroke-dasharray: 40, 200;
-      opacity: 1;
-    }
-
-    100% {
-      stroke-dasharray: 125, 200;
-      opacity: 1;
-    }
   }
 
   @keyframes dash {
@@ -784,12 +591,10 @@ function typing (e) {
       stroke-dashoffset: 0;
       opacity: 0;
     }
-
     50% {
       stroke-dasharray: 40, 200;
       opacity: 1;
     }
-
     100% {
       stroke-dasharray: 125, 200;
       opacity: 1;
@@ -797,14 +602,12 @@ function typing (e) {
   }
 
   @keyframes blink {
-
     20%,
     24%,
     55% {
       color: #111;
       text-shadow: none;
     }
-
     0%,
     19%,
     21%,
@@ -813,9 +616,6 @@ function typing (e) {
     54%,
     56%,
     100% {
-      /*     color: #fccaff;
-    text-shadow: 0 0 5px #f562ff, 0 0 15px #f562ff, 0 0 25px #f562ff,
-      0 0 20px #f562ff, 0 0 30px #890092, 0 0 80px #890092, 0 0 80px #890092; */
       text-shadow: 0 0 5px #ffa500, 0 0 15px #ffa500, 0 0 20px #ffa500,
         0 0 40px #ffa500, 0 0 60px #ff0000, 0 0 10px #ff8d00,
         0 0 98px #ff0000;

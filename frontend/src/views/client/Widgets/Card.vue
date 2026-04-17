@@ -11,15 +11,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
+defineOptions({
+  name: 'CardComponent'
+})
 import { ref, computed, onMounted } from 'vue'
 const props = defineProps(['dataImage'])
 const width = ref(0)
 const height = ref(0)
 const mouseX = ref(0)
 const mouseY = ref(0)
-const mouseLeaveDelay = ref(null)
-const cardRef = ref(null)
+const mouseLeaveDelay = ref(0)
+const cardRef = ref<HTMLDivElement | null>(null) // 明确类型
 const mousePX = computed(() => {
   return mouseX.value / width.value;
 })
@@ -40,32 +43,36 @@ const cardBgTransform = computed(() => {
     transform: `translateX(${tX}px) translateY(${tY}px)`
   }
 })
+
 const cardBgImage = computed(() => {
   return {
     backgroundImage: `url(${props.dataImage})`
   }
 })
-function handleMouseMove (e) {
+
+const handleMouseMove = (e: MouseEvent) => { // 给事件参数明确类型：e: MouseEvent
   if (!cardRef.value) return
   const _card = cardRef.value.getBoundingClientRect()
   mouseX.value = e.clientX - _card.left - width.value / 2;
   mouseY.value = e.clientY - _card.top - height.value / 2;
 }
-function handleMouseEnter () {
-  clearTimeout(mouseLeaveDelay.value);
-}
-function handleMouseLeave () {
+
+const handleMouseEnter = () => clearTimeout(mouseLeaveDelay.value);
+
+const handleMouseLeave = () => {
   mouseLeaveDelay.value = setTimeout(() => {
     mouseX.value = 0;
     mouseY.value = 0;
   }, 1000);
 }
+
 onMounted(() => {
-  if (cardRef.value) {
-    const _card = cardRef.value.querySelector('.card-item')
-    width.value = _card.offsetWidth;
-    height.value = _card.offsetHeight;
-  }
+  const el = cardRef.value
+  if (!el) return
+  const cardItem = el.querySelector<HTMLElement>('.card-item')
+  if (!cardItem) return
+  width.value = cardItem.offsetWidth
+  height.value = cardItem.offsetHeight
 })
 </script>
 

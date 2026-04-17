@@ -1,11 +1,12 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
-import compression from 'vite-plugin-compression' // gzip压缩
+import AutoImport from 'unplugin-auto-import/vite'
 import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
+import vue from '@vitejs/plugin-vue'
+import vueDevTools from 'vite-plugin-vue-devtools'
 
+// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const { VITE_API_URL } = loadEnv(mode, process.cwd(), '')
   return {
@@ -13,15 +14,11 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       vueDevTools(),
-      Components({
+      AutoImport({
         resolvers: [ElementPlusResolver()],
       }),
-      compression({
-        verbose: true,          // 输出压缩结果到控制台
-        disable: false,         // 是否禁用
-        threshold: 10240,       // 只压缩大于 10kb 的文件
-        algorithm: 'gzip',      // 压缩算法 (gzip 或 brotliCompress)
-        ext: '.gz',             // 生成的压缩文件后缀
+      Components({
+        resolvers: [ElementPlusResolver()],
       }),
     ],
     server: {
@@ -44,7 +41,7 @@ export default defineConfig(({ mode }) => {
     },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
     build: {

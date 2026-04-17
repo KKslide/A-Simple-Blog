@@ -3,7 +3,7 @@
     <el-table :data="msgList" :border="true" style="width: 100%">
       <el-table-column prop="created_at" label="日期" min-width="100">
         <template #default="scope">
-          <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ formatDate(scope.row.created_at) }}</p>
         </template>
       </el-table-column>
       <el-table-column prop="nickname" label="用户/邮箱"></el-table-column>
@@ -34,7 +34,7 @@
       v-if="msgList.length"
       background
       layout="prev, pager, next"
-      :page-size="pageSize"
+      :page-size="5"
       :page-count="pages"
       :total="total"
       @current-change="pageChange"
@@ -42,36 +42,54 @@
   </div>
 </template>
 
-<script setup>
-import { ref,reactive, onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import ServerAPI from '@/api/server'
 import { ElMessage } from 'element-plus'
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
+import type { MessageItem } from '@/types/api'
+
 const pageSize = ref(10)
-const total = ref(1) // 总条数
-const pages = ref(1) // 总页数
-const curPage = ref(1) // 当前页
-const msgList = ref([])
-function checkMsg(row) {}
-function deleteMsg(id) {
-  ServerAPI.delMsg({id})
-    .then(() => {
-      ElMessage.success('删除成功✌️')
-      getMessageList()
-    })
+const total = ref(1)
+const pages = ref(1)
+const curPage = ref(1)
+const msgList = ref<MessageItem[]>([])
+
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
+
+function checkMsg(_row: MessageItem) {
+  // 可以扩展查看详情
+}
+
+function deleteMsg(id: number) {
+  ServerAPI.delMsg({ id }).then(() => {
+    ElMessage.success('删除成功✌️')
+    getMessageList()
+  })
+}
+
 function getMessageList() {
-  ServerAPI.getMsgList({ pageNo: curPage.value, pageSize: pageSize.value })
-    .then(res => {
-      msgList.value = res.messages
-      total.value = res.total
-      pages.value = res.pages
-    })
+  ServerAPI.getMsgList({ pageNo: curPage.value, pageSize: pageSize.value }).then((res) => {
+    msgList.value = res.messages || []
+    total.value = res.total || 0
+    pages.value = res.pages || 0
+  })
 }
-function pageChange(currentPage) {
+
+function pageChange(currentPage: number) {
   curPage.value = currentPage
   getMessageList()
 }
+
 onMounted(() => {
   getMessageList()
 })

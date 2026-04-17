@@ -17,7 +17,7 @@
   </el-row>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import html2canvas from 'html2canvas'
 import { onMounted } from 'vue'
 /**
@@ -26,7 +26,7 @@ import { onMounted } from 'vue'
  * @param {Array<number>} weights - 对应的权重（数值越大，概率越高）
  * @returns {*} - 随机选中的元素
  */
-function weightedRandom (items, weights) {
+function weightedRandom (items: number[], weights: number[]) {
   if (items.length !== weights.length) {
     throw new Error('items 和 weights 长度必须一致')
   }
@@ -39,10 +39,10 @@ function weightedRandom (items, weights) {
 
   // 按权重区间查找
   for (let i = 0; i < items.length; i++) {
-    if (random < weights[i]) {
+    if (random < weights[i]!) {
       return items[i]
     }
-    random -= weights[i]
+    random -= weights[i]!
   }
 }
 
@@ -62,11 +62,11 @@ function randomInteger ({ min = 0, max = 100 } = {}) {
   }
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
-let imageBox, image, btn
+let imageBox: HTMLDivElement, image: HTMLImageElement, btn: HTMLButtonElement
 onMounted(() => {
-  imageBox = document.querySelector("#image");
-  image = document.querySelector("#image img");
-  btn = document.querySelector(".btn");
+  imageBox = document.querySelector("#image")!;
+  image = document.querySelector("#image img")!;
+  btn = document.querySelector(".btn")!;
   btn.onclick = function () {
     startAnimation();
   };
@@ -75,16 +75,16 @@ function startAnimation () {
   image.classList.remove("quickFade");
   snap(imageBox);
 }
-function weightedRandomDistrib (peak, count) {
-  const prob = [],
-    seq = [];
+function weightedRandomDistrib (peak: number, count: number): number | undefined {
+  const prob: number[] = [],
+    seq: number[] = [];
   for (let i = 0; i < count; i++) {
     prob.push(Math.pow(count - Math.abs(peak - i), 6));
     seq.push(i);
   }
   return weightedRandom(seq, prob);
 }
-function animateTransform (elem, sx, sy, angle, duration) {
+function animateTransform (elem: HTMLElement, sx: number, sy: number, angle: number, duration: number) {
   elem.animate(
     [
       { transform: "rotate(0) translate(0, 0)" },
@@ -96,16 +96,18 @@ function animateTransform (elem, sx, sy, angle, duration) {
     }
   );
 }
-function newCanvasFromImageData (imageDataArray, w, h) {
+function newCanvasFromImageData (imageDataArray: Uint8ClampedArray, w: number, h: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
-  const tempCtx = canvas.getContext("2d");
-  tempCtx.putImageData(new ImageData(imageDataArray, w, h), 0, 0);
+  const tempCtx = canvas.getContext("2d")!;
+  const imageData = new ImageData(w, h);
+  imageData.data.set(imageDataArray);
+  tempCtx.putImageData(imageData, 0, 0);
 
   return canvas;
 }
-const snap = target => {
+const snap = (target: HTMLElement) => {
   html2canvas(target, {
     allowTaint: false,
     useCORS: true,
@@ -114,25 +116,28 @@ const snap = target => {
   })
     .then(canvas => {
       const canvasCount = 20;
-      const ctx = canvas.getContext("2d");
+      const ctx = canvas.getContext("2d")!;
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const pixelArr = imageData.data;
       const data = imageData.data.slice(0).fill(0);
-      let imageDataArray = Array.from({ length: canvasCount }, e => data.slice(0));
+      const imageDataArray = Array.from({ length: canvasCount }, () => data.slice(0));
 
       for (let i = 0; i < pixelArr.length; i += 4) {
         const p = Math.floor(i / pixelArr.length * canvasCount);
-        const a = imageDataArray[weightedRandomDistrib(p, canvasCount)];
+        const index = weightedRandomDistrib(p, canvasCount) || 0;
+        const a = imageDataArray[index];
 
-        a[i] = pixelArr[i];
-        a[i + 1] = pixelArr[i + 1];
-        a[i + 2] = pixelArr[i + 2];
-        a[i + 3] = pixelArr[i + 3];
+        if (a) {
+          a[i] = pixelArr[i] || 0;
+          a[i + 1] = pixelArr[i + 1] || 0;
+          a[i + 2] = pixelArr[i + 2] || 0;
+          a[i + 3] = pixelArr[i + 3] || 0;
+        }
       }
 
       for (let i = 0; i < canvasCount; i++) {
         const c = newCanvasFromImageData(
-          imageDataArray[i],
+          imageDataArray[i] as Uint8ClampedArray,
           canvas.width,
           canvas.height
         );

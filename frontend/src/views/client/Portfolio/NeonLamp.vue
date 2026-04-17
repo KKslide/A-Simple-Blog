@@ -2,7 +2,7 @@
   <div class="neon-content">
     <div class="btnBox">
       <label class="button" for="btn">
-        <input id="btn" type="checkbox" value="0" style="opacity: 0;" @click="switcher">
+        <input id="btn" type="checkbox" value="0" style="opacity: 0;" @click="turnOn = !turnOn">
         <span class="switcher"></span>
       </label>
     </div>
@@ -10,12 +10,9 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 const turnOn = ref(false)
-function switcher () {
-  turnOn.value = !turnOn.value
-}
 </script>
 
 <style lang="scss" scoped>

@@ -21,10 +21,6 @@
   </div>
 </template>
 
-<script setup>
-
-</script>
-
 <style lang="scss" scoped>
 nav {
   width: 100%;

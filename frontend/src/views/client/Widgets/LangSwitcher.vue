@@ -1,46 +1,49 @@
 <template>
   <div>
-    <div id="translate_bar" @click="switchLang">
+    <div
+      ref="barRef"
+      id="translate_bar"
+      @click="switchLang"
+      @touchstart="touchFn"
+      @mouseover="msOverFn"
+      @mouseleave="msLeaveFn"
+    >
       <span class="iconfont icon-fanyi ml-8 mr-3 fz-12"></span>
       <span class="text">{{ $t("lang") }}</span>
     </div>
   </div>
 </template>
 
-<script setup>
-import { onMounted } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { useLangStore } from '@/stores/langStore'
-const langStore = useLangStore()
 import { useI18n } from 'vue-i18n'
+const langStore = useLangStore()
 const { locale } = useI18n()
+const barRef = ref()
+const timer = ref(0);
 function switchLang() {
   const lang = sessionStorage.getItem('lang')
   locale.value = lang == 'en' ? 'zh' : 'en'
   sessionStorage.setItem('lang', locale.value)
   langStore.setLang(locale.value)
 }
-onMounted(() => {
-  var bar = document.getElementById('translate_bar');
-  var barText = bar.children[1];
-  var timer = null;
-  timer = setTimeout(() => {
-    bar.style.right = '-45px';
+function touchFn() {
+  barRef.value.style.right = '3px';
+  setTimeout(() => {
+    barRef.value.style.right = '-45px';
   }, 8000);
-  bar.ontouchstart = function () {
-    this.style.right = '3px';
-    setTimeout(() => {
-      bar.style.right = '-45px';
-    }, 8000);
-  }
-  bar.onmouseover = function () {
-    this.style.right = '3px';
-  }
-  bar.onmouseleave = function () {
-    this.style.right = '-45px';
-  }
-  // barText.onclick = function () {
-  //   localStorage.getItem('localeLanguage') == 'en' ? setup('zh') : setup('en');
-  // }
+}
+function msOverFn() {
+  barRef.value.style.right = '3px';
+}
+function msLeaveFn() {
+  barRef.value.style.right = '-45px';
+}
+onMounted(() => {
+  timer.value = setTimeout(() => {
+    barRef.value.style.right = '-45px';
+  }, 8000);
 })
 </script>
 

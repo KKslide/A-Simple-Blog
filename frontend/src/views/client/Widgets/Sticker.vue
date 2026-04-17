@@ -7,7 +7,7 @@
       <span class="cate_name" @touchend.stop="setCollapse(false, $event)" @click.stop="isCollapsed=false">{{ cateName }}</span>
       <div :class="['cate_nav', { 'collapsed': isCollapsed }]" v-if="props.cateList">
         <ul ref="cateNavRef" v-show="!isDragging||demoMode">
-          <li @touchend.stop="emitSwitch({}, $event)" @click.stop="$emit('switch')">
+          <li @touchend.stop="emitSwitch(null, $event)" @click.stop="$emit('switch', null)">
             All
             <el-icon v-if="!curCat" color="#fff" size="15">
               <View />
@@ -28,19 +28,51 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import utils from '@/utils'
-const StickerRef = ref(null)
-const cateNavRef = ref(null)
-const canDrag = ref(true)
-const isDragging = ref(false)
-const isCollapsed = ref(false)
-const props = defineProps(['cateList', 'curCat', 'demoMode'])
-const emit = defineEmits(['switch'])
-const pos = reactive({ x: 10, y: 200 })
-const screen = reactive({ width: 0, height: 0 })
-const touchPos = reactive({ D2Right: 0, D2Top: 0 })
+
+interface Category {
+  id: number;
+  name: string;
+  show_type?: string;
+}
+
+interface Position {
+  x: number | string;
+  y: number | string;
+}
+
+interface ScreenSize {
+  width: number;
+  height: number;
+}
+
+interface TouchPosition {
+  D2Right: number;
+  D2Top: number;
+}
+
+const StickerRef = ref<HTMLElement | null>(null)
+const cateNavRef = ref<HTMLElement | null>(null)
+const canDrag = ref<boolean>(true)
+const isDragging = ref<boolean>(false)
+const isCollapsed = ref<boolean>(false)
+
+const props = defineProps<{
+  cateList?: Category[];
+  curCat?: string;
+  demoMode?: boolean;
+}>()
+
+const emit = defineEmits<{
+  (e: 'switch', category: Category | null): void;
+}>()
+
+const pos = reactive<Position>({ x: 10, y: 200 })
+const screen = reactive<ScreenSize>({ width: 0, height: 0 })
+const touchPos = reactive<TouchPosition>({ D2Right: 0, D2Top: 0 })
+
 const cateName = computed(() => {
   // 新增一个demoMode
   if (props.demoMode) {
@@ -51,18 +83,23 @@ const cateName = computed(() => {
   }
   return isDragging.value ? '😣 放开我~' : isCollapsed.value ? '<<' : '↕️ Category'
 })
-const stickerStyle = computed({
-  get: () => {
-    let basicStyle = `right:${pos.x}px;top:${pos.y}px;border-radius:${isDragging.value ? '15px' : '15px 0 0 15px'};`
-    // 新增一个demoMode
-    if (props.demoMode) {
-      basicStyle += 'position:absolute;'
-      basicStyle += isDragging.value ? `right:${pos.x}px;` : 'right:-1px;'
-    }
-    return basicStyle
+
+const stickerStyle = computed(() => {
+  const style: Record<string, string> = {
+    right: `${pos.x}px`,
+    top: `${pos.y}px`,
+    borderRadius: isDragging.value ? '15px' : '15px 0 0 15px'
   }
+  // 新增一个demoMode
+  if (props.demoMode) {
+    style.position = 'absolute'
+    style.right = isDragging.value ? `${pos.x}px` : '-1px'
+  }
+  return style
 })
-const minY = ref(0)
+
+const minY = ref<number>(0)
+
 watch(() => props.cateList,
   async () => {
     await nextTick()
@@ -71,26 +108,37 @@ watch(() => props.cateList,
     const ulHeight = cateNavRef.value?.offsetHeight ?? 0
     minY.value = height - (stickerHeight + ulHeight + 20)
   },
-  { immediate: true })
+  { immediate: true }
+)
+
 watch(isCollapsed, (boo) => {
   const ulHeight = cateNavRef.value?.offsetHeight ?? 0
-  !boo ? minY.value -= ulHeight : minY.value += ulHeight
+  if (!boo) {
+    minY.value -= ulHeight
+  } else {
+    minY.value += ulHeight
+  }
 })
-function startHandler (e) {
-  const isTouch = e.type.startsWith('touch')
-  const _target = isTouch ? e.touches[0] : e
-  const { clientX, clientY } = _target
-  const { offsetLeft, offsetTop, offsetWidth } = StickerRef.value
-  const elAtPoint = document.elementFromPoint(clientX, clientY)
-  const _D2right = offsetWidth - (clientX - offsetLeft)
-  const _D2Top = clientY - offsetTop
-  console.log(`触摸点离sticker右侧:${_D2right}`, '|', `离顶部:${_D2Top}`)
-  touchPos.D2Right = _D2right
-  touchPos.D2Top = _D2Top
 
-  const catNavEl = StickerRef.value.querySelector('.cate_nav')
-  if (catNavEl && catNavEl.contains(elAtPoint)) {
-    canDrag.value = false
+function startHandler (e: MouseEvent | TouchEvent) {
+  const isTouch = e.type.startsWith('touch')
+  const _target = isTouch ? (e as TouchEvent).touches[0] : (e as MouseEvent)
+  if (!_target) return
+  const { clientX, clientY } = _target
+
+  if (StickerRef.value) {
+    const { offsetLeft, offsetTop, offsetWidth } = StickerRef.value
+    const elAtPoint = document.elementFromPoint(clientX, clientY)
+    const _D2right = offsetWidth - (clientX - offsetLeft)
+    const _D2Top = clientY - offsetTop
+    console.log(`触摸点离sticker右侧:${_D2right}`, '|', `离顶部:${_D2Top}`)
+    touchPos.D2Right = _D2right
+    touchPos.D2Top = _D2Top
+
+    const catNavEl = StickerRef.value.querySelector('.cate_nav')
+    if (catNavEl && elAtPoint && catNavEl.contains(elAtPoint)) {
+      canDrag.value = false
+    }
   }
 
   if (!isTouch) {
@@ -98,13 +146,15 @@ function startHandler (e) {
     document.addEventListener('mouseup', endHandler)
   }
 }
-function moveHandler (e) {
+
+function moveHandler (e: MouseEvent | TouchEvent) {
   if (!canDrag.value) return
   isDragging.value = true
   const isTouch = e.type.startsWith('touch')
-  const _target = isTouch ? e.touches[0] : e
+  const _target = isTouch ? (e as TouchEvent).touches[0] : (e as MouseEvent)
+  if (!_target) return
   const { clientX, clientY } = _target
-  let x = (screen.width - clientX - touchPos.D2Right).toFixed(3)
+  const x = (screen.width - clientX - touchPos.D2Right).toFixed(3)
   let y = clientY - touchPos.D2Top
   if (y < 0) {
     y = 10
@@ -113,15 +163,16 @@ function moveHandler (e) {
     y = screen.height - 70
   }
   else {
-    y = y.toFixed(3)
+    y = Number(y.toFixed(3))
   }
   Object.assign(pos, { x, y })
 }
-async function endHandler (e) {
+
+async function endHandler (e: MouseEvent | TouchEvent) {
   await nextTick()
   // console.log('touch end~~~', isCollapsed.value);
-  let x = 10
-  let y = Number(pos.y) >= minY.value ? minY.value : pos.y
+  const x = 10
+  const y = Number(pos.y) >= minY.value ? minY.value : Number(pos.y)
   isDragging.value = false
   canDrag.value = true
   Object.assign(pos, { x, y })
@@ -131,44 +182,60 @@ async function endHandler (e) {
     document.removeEventListener('mouseup', endHandler)
   }
 }
-function isOnTarget (e) {
+
+function isOnTarget (e: TouchEvent) {
   const touch = e.changedTouches[0]
+  if (!touch) return false
   const { clientX, clientY } = touch
   // 当前触摸点下的元素
   const elAtPoint = document.elementFromPoint(clientX, clientY)
   // 当前 sticker 元素
-  return e.target.contains(elAtPoint)
+  return e.target && elAtPoint && (e.target as Element).contains(elAtPoint)
 }
-function setCollapse (boo, e) {
-  if (isOnTarget(e)) {
-    if (boo) {
-      isCollapsed.value = boo
-    }
-    else {
-      if (cateName.value == '<<') {
+
+function setCollapse (boo: boolean, e: MouseEvent | TouchEvent) {
+  if (e.type.startsWith('touch')) {
+    if (isOnTarget(e as TouchEvent)) {
+      if (boo) {
         isCollapsed.value = boo
+      }
+      else {
+        if (cateName.value === '<<') {
+          isCollapsed.value = boo
+        }
       }
     }
   }
-  endHandler()
+  endHandler(e)
 }
-function emitSwitch (obj, e) {
-  if (isOnTarget(e)) {
-    emit('switch', obj)
+
+function emitSwitch (obj: Category | null, e: MouseEvent | TouchEvent) {
+  if (e.type.startsWith('touch')) {
+    if (isOnTarget(e as TouchEvent)) {
+      emit('switch', obj)
+    }
   }
   canDrag.value = true
 }
-const setSreenData = function () {
-  const { clientWidth, clientHeight } = props.demoMode
+
+const setScreenData = function () {
+  const element = props.demoMode
     ? document.querySelector('#stickerDemo')
     : document.documentElement
-  Object.assign(screen, { width: clientWidth, height: clientHeight })
+
+  if (element) {
+    const { clientWidth, clientHeight } = element
+    Object.assign(screen, { width: clientWidth, height: clientHeight })
+  }
 }
-const handleResize = utils._debounce(setSreenData, 200)
+
+const handleResize = utils._debounce(setScreenData, 200)
+
 onMounted(() => {
-  setSreenData()
+  setScreenData()
   window.addEventListener('resize', handleResize)
 })
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })

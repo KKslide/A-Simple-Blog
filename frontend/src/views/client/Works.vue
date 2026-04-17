@@ -2,8 +2,7 @@
   <div id="work_list">
     <Card
       :data-image="'https://mypics.zhaopin.cn/small/procedures/resume/individual/works/1757411062228148397/4c2e703f-cfc0-4cec-ba7d-71a1737ca0c8.jpeg'"
-      @click="check('/v2')"
-    >
+      @click="check('/v2')">
       <template #header>
         <h1>Echarts & Map</h1>
       </template>
@@ -11,7 +10,7 @@
         <p>一个Echarts+百度地图应用</p>
       </template>
     </Card>
-    <Card v-for="item in list" :key="item.id" :data-image="BaseUrl + item.img" @click="check(item.routeName)">
+    <Card v-for="item in list" :key="item.name" :data-image="BaseUrl + item.img" @click="check(item.routeName)">
       <template #header>
         <h1>{{ item.name }}</h1>
       </template>
@@ -22,15 +21,16 @@
   </div>
 </template>
 
-<script setup>
-defineOptions({name:'works'})
-import { computed, onMounted } from 'vue'
+<script setup lang="ts">
+defineOptions({ name: 'WorksPage' })
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { portfoliosList } from '@/utils/config'
+import { portfoliosList } from '@/config/config'
 import Card from './Widgets/Card.vue'
 const BaseUrl = import.meta.env.VITE_MEDIA_URL
 const router = useRouter()
-function check(routeName) {
+const list = computed(() => portfoliosList.sort(() => Math.random() - 0.5))
+const check = (routeName: string) => {
   if (!routeName) return
   if (routeName == '/v2') {
     window.open('/v2')
@@ -38,9 +38,6 @@ function check(routeName) {
   }
   router.push({ name: routeName })
 }
-const list = computed(() => {
-  return portfoliosList.sort(() => Math.random() - 0.5)
-})
 </script>
 
 <style lang="scss" scoped>

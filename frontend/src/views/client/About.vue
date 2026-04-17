@@ -30,14 +30,14 @@
             </el-col>
             <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
               <div id="profil_img">
-                <img src="@/assets/img/profil.jpg" class="img-responsive old" alt />
-                <img src="@/assets/img/profil.edit.jpg" class="img-responsive young" alt />
+                <img src="@/assets/img/profil.jpg" class="img-responsive old" />
+                <img src="@/assets/img/profil.edit.jpg" class="img-responsive young" />
               </div>
             </el-col>
             <el-divider></el-divider>
             <el-col>
               <el-button v-show="!isChecked" :type="''" @click="checkResume" >
-                <span class="mr-3">我的简历</span>
+                <span class="mr-3">My Resume</span>
                 <el-icon><View /></el-icon>
               </el-button>
               <PdfViewer  v-show="isChecked" src="https://video.kangyouknowwho.space/Resume.pdf"/>
@@ -50,9 +50,11 @@
   </div>
 </template>
 
-<script setup>
-defineOptions({ name: 'about' })
-import { ref, computed, onMounted, nextTick } from 'vue'
+<script setup lang="ts">
+defineOptions({
+  name: "AboutPage"
+})
+import { ref, computed, nextTick } from 'vue'
 import PdfViewer from './Widgets/PdfViewer.vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
@@ -67,7 +69,7 @@ async function checkResume() {
   isChecked.value = true
   await nextTick()
   const dom = document.querySelector('.pdf-viewer')
-  dom.scrollIntoView({ behavior: "smooth" })
+  dom!.scrollIntoView({ behavior: "smooth" })
 }
 </script>
 

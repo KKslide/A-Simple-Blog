@@ -27,7 +27,7 @@
         <el-row :gutter="10">
           <el-col :xs="24" :sm="24" :md="12" :lg="8" :xl="8" v-for="item in vlogList.slice(4)" :key="item.id">
             <div :class="['vlog_item', 'list', `item-${item.id}`]" @mouseover="setHover(item.id, true)" @mouseout="setHover(item.id, false)" @click="checkContent(item.id)">
-              <el-image :src="BaseUrl + item.cover_url" fit="cover" style="height:200px; width: 100%;" :lazy="true" loading="lazy"></el-image>
+              <el-image :src="item.cover_url.startsWith('http') ? item.cover_url : BaseUrl + item.cover_url" fit="cover" style="height:200px; width: 100%;" :lazy="true" loading="lazy"></el-image>
               <el-icon class="play_icon" size="80" color="rgba(255,255,255,.3)"><VideoPlay /></el-icon>
               <div class="v_i_info">
                 <h3 class="v_i_title">{{ item.title }}</h3>
@@ -65,13 +65,14 @@
   </div>
 </template>
 
-<script setup>
-defineOptions({ name: 'vloglist' })
+<script setup lang="ts">
+defineOptions({ name: 'VlogList' })
 import { ref, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import ClientAPI from '@/api/client/index'
 import utils from '@/utils'
 import { storeToRefs } from 'pinia'
+import type { BlogItemConfig } from '@/interfaces'
 import { usePageStore } from '@/stores/pageStore'
 const pageStore = usePageStore()
 const { blogList } = storeToRefs(pageStore)
@@ -87,26 +88,31 @@ const texts = computed(() => ({
   Douyin: t('vlogList.Douyin'),
   noDataText: t('logList.noData'),
 }))
-const vlogList = computed(() => blogList.value['Vlog'])
+const vlogList = computed<BlogItemConfig[]>(() => blogList.value['Vlog'] || [])
 const BaseUrl = import.meta.env.VITE_MEDIA_URL
 const threshold = 768
 const carouselType = ref('card')
-const videoCrs = ref(null)
+const videoCrs = ref<unknown>(null)
 const router = useRouter()
 // 响应式设置 carouselType
 const updateCarouselType = () => {
   carouselType.value = window.innerWidth < threshold ? '' : 'card'
 }
-const handleResize = utils.throttle(updateCarouselType, 200)
+const handleResize = utils._throttle(updateCarouselType, 200)
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
-function setHover(id, flag) {
+function setHover(id: number, flag: boolean) {
   const dom = document.querySelector(`.item-${id}`)
-  const { classList } = dom
-  flag ? classList.add('hovered') : classList.remove('hovered')
+  if (!dom) return
+  const { classList } = dom as HTMLDivElement
+  if (flag) {
+    classList.add('hovered')
+  } else {
+    classList.remove('hovered')
+  }
 }
-function checkContent(id) {
+function checkContent(id: number) {
   router.push(`/content/${id}`)
 }
 function getList() {

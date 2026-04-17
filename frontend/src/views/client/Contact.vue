@@ -9,11 +9,12 @@
             <el-col :xs="24" :sm="24" :md="16" :lg="16" :xl="16">
               <el-form ref="contactFormRef" style="max-width: 600px" :model="contactForm" :rules="rules"
                 label-width="auto">
-                <el-form-item prop="email">
-                  <el-input v-model="contactForm.email" :maxlength="50"  type="email" :placeholder="namePlaceHolder" />
+                <el-form-item prop="nickname">
+                  <el-input v-model="contactForm.nickname" :maxlength="50" type="text" :placeholder="namePlaceHolder" />
                 </el-form-item>
-                <el-form-item prop="message">
-                  <el-input v-model="contactForm.message" :maxlength="200" show-word-limit type="textarea" :placeholder="messagePlaceHolder" />
+                <el-form-item prop="content">
+                  <el-input v-model="contactForm.content" :maxlength="200" show-word-limit type="textarea"
+                    :placeholder="messagePlaceHolder" />
                 </el-form-item>
                 <el-form-item>
                   <el-button type="info" plain @click="sendMessage(contactForm)">{{ sendText }}</el-button>
@@ -44,10 +45,13 @@
                 <div class="c_s_icon link">
                   <a href="https://github.com/KKslide" target="_blank"><i class="iconfont icon-github"></i></a>
                   <a href="https://x.com/KK_slide" target="_blank"><i class="iconfont icon-X"></i></a>
-                  <a href="https://www.instagram.com/kangyouknowwho/" target="_blank"><i class="iconfont icon-instagram"></i></a>
+                  <a href="https://www.instagram.com/kangyouknowwho/" target="_blank"><i
+                      class="iconfont icon-instagram"></i></a>
                   <a href="https://weibo.com/u/1915491875" target="_blank"><i class="iconfont icon-weibo"></i></a>
-                  <a href="https://space.bilibili.com/334163601" target="_blank"><i class="iconfont icon-icon_bilibili"></i></a>
-                  <a href="https://www.xiaohongshu.com/user/profile/5fb3dfea0000000001005512" target="_blank"><i class="iconfont icon-XiaoHongShu"></i></a>
+                  <a href="https://space.bilibili.com/334163601" target="_blank"><i
+                      class="iconfont icon-icon_bilibili"></i></a>
+                  <a href="https://www.xiaohongshu.com/user/profile/5fb3dfea0000000001005512" target="_blank"><i
+                      class="iconfont icon-XiaoHongShu"></i></a>
                 </div>
               </div>
             </el-col>
@@ -61,7 +65,7 @@
                 <div class="contact_msg_item" v-for="item in messageList" :key="item.id">
                   <div class="c_m_i_detail mail">{{ item.nickname }}:</div>
                   <div class="c_m_i_detail content">{{ item.content }}</div>
-                  <div class="c_m_i_detail time">{{ new Date(item.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</div>
+                  <div class="c_m_i_detail time">{{ dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss') }}</div>
                   <el-divider />
                 </div>
               </div>
@@ -73,9 +77,11 @@
   </div>
 </template>
 
-<script setup>
-defineOptions({name:'contact'})
+<script setup lang="ts">
+defineOptions({ name: 'ContactPage' })
+import type { MsgDataConfig, MsgSendConfig } from '@/interfaces'
 import { reactive, ref, computed, watch, onMounted, onActivated } from 'vue'
+import dayjs from 'dayjs' // 导入 Day.js
 import { ElMessage } from 'element-plus'
 import ClientAPI from '@/api/client/index'
 import { useLangStore } from '@/stores/langStore'
@@ -89,33 +95,33 @@ const sendText = computed(() => t('contact.sendText'))
 const location = computed(() => t('contact.location'))
 const socialText = computed(() => t('contact.socialText'))
 const langStore = useLangStore()
-const messageList = ref([])
-const contactFormRef = ref(null)
-const contactForm = reactive({
-  email: '',
-  message: '',
+const messageList = ref<Array<MsgDataConfig>>([])
+const contactFormRef = ref()
+const contactForm = reactive<MsgSendConfig>({
+  nickname: '',
+  content: '',
 })
 const rules = ({
-  email: [{ required: true, message: nameEmptyWarning, trigger: 'blur' }],
-  message: [{ required: true, message: messageEmptyWarning, trigger: 'blur' }]
+  nickname: [{ required: true, message: nameEmptyWarning, trigger: 'blur' }],
+  content: [{ required: true, message: messageEmptyWarning, trigger: 'blur' }]
 })
 function resetForm() {
   contactFormRef.value.resetFields()
 }
-function getMessageList () {
-  ClientAPI.getMessage().then(res => {
-    messageList.value = res.sort((n,m)=>{
+function getMessageList() {
+  ClientAPI.getMessage().then((res) => {
+    messageList.value = res.sort((n, m) => {
       const nTime = new Date(n.created_at).getTime()
       const mTime = new Date(m.created_at).getTime()
       return mTime - nTime
     })
   })
 }
-function sendMessage(data) {
-  contactFormRef.value.validate(valid => {
+function sendMessage(data: MsgSendConfig) {
+  contactFormRef.value.validate((valid: boolean) => {
     if (valid) {
-      let { email: nickname, message } = data
-      let params = { nickname, content: message }
+      const { nickname, content } = data
+      const params = { nickname, content }
       ClientAPI.postMessage(params)
         .then(() => {
           getMessageList()
@@ -139,16 +145,19 @@ watch(() => langStore.currentLang, () => resetForm())
 </script>
 
 <style lang="scss" scoped>
-.contact_social{
-  .c_s_icon{
+.contact_social {
+  .c_s_icon {
     display: flex;
     align-items: center;
     margin-bottom: 8px;
-    span{
+
+    span {
       margin-left: 10px;
     }
+
     a {
       margin-right: 10px;
+
       .iconfont {
         font-size: 20px;
         color: #333;
@@ -156,11 +165,13 @@ watch(() => langStore.currentLang, () => resetForm())
     }
   }
 }
-.contact_msg_list{
-  .contact_msg_item{
-    .c_m_i_detail{
+
+.contact_msg_list {
+  .contact_msg_item {
+    .c_m_i_detail {
       margin-bottom: 10px;
       color: #666;
+
       &.mail {
         font-weight: bold;
         color: #000;

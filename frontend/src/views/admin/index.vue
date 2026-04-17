@@ -5,9 +5,10 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Nav from './Layout/Nav.vue'
 import { useRoute } from 'vue-router'
+
 const route = useRoute()
 </script>
 

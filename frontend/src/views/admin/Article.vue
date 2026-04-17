@@ -6,13 +6,18 @@
       <el-table-column prop="cate_name" label="文章分类" min-width="100"></el-table-column>
       <el-table-column prop="created_at" label="添加时间" min-width="200">
         <template #default="scope">
-          <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+          <p>{{ formatDate(scope.row.created_at) }}</p>
         </template>
       </el-table-column>
       <el-table-column prop="view_count" label="阅读量" min-width="100"></el-table-column>
       <el-table-column prop="comment_num" label="评论" min-width="100">
         <template #default="scope">
-          <el-button v-if="!!scope.row.comment_num" type="primary" text @click="checkComment(scope.row)">
+          <el-button
+            v-if="!!scope.row.comment_num"
+            type="primary"
+            text
+            @click="checkComment(scope.row)"
+          >
             {{ scope.row.comment_num }}
           </el-button>
           <el-button v-else type="info" text disabled>0</el-button>
@@ -20,7 +25,7 @@
       </el-table-column>
       <el-table-column prop="is_pinned" label="置顶" min-width="100">
         <template #default="scope">
-           <el-switch
+          <el-switch
             v-model="scope.row.is_pinned"
             inline-prompt
             style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
@@ -34,7 +39,7 @@
       </el-table-column>
       <el-table-column prop="is_published" label="显示" min-width="100">
         <template #default="scope">
-           <el-switch
+          <el-switch
             v-model="scope.row.is_published"
             inline-prompt
             style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
@@ -66,8 +71,14 @@
       </el-table-column>
     </el-table>
 
-    <br>
-    <el-button type="info" :text="true" bg @click='drawerType="add";openEditor()'>添加文章</el-button>
+    <br />
+    <el-button
+      type="info"
+      :text="true"
+      bg
+      @click="drawerType = 'add'; openEditor()"
+      >添加文章</el-button
+    >
 
     <el-divider></el-divider>
     <el-pagination
@@ -87,7 +98,7 @@
       v-model="drawerVisible"
       :destroy-on-close="true"
       direction="btt"
-      ref="drawer"
+      ref="drawerRef"
       size="100%"
       :modal-append-to-body="true"
     >
@@ -98,9 +109,14 @@
             <el-input v-model="articleFrom.title" autocomplete="off"></el-input>
           </el-form-item>
           <!-- 文章分类 -->
-          <el-form-item label="文章分类"  prop="category_id" class="item_category">
+          <el-form-item label="文章分类" prop="category_id" class="item_category">
             <el-select v-model="articleFrom.category_id" placeholder="请选文章分类">
-              <el-option v-for="(v,i) in categoryData" :key="v.id" :label="v.name" :value="v.id" ></el-option>
+              <el-option
+                v-for="v in categoryData"
+                :key="v.id"
+                :label="v.name"
+                :value="v.id"
+              ></el-option>
             </el-select>
           </el-form-item>
           <!-- 是否显示 -->
@@ -123,16 +139,6 @@
               inactive-value="0"
             ></el-switch>
           </el-form-item>
-          <!-- 是否为内置页 -->
-          <!-- <el-form-item label="是否设为内置页" prop="is_built_in">
-            <el-switch
-              v-model="articleFrom.is_built_in"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
-              active-value="1"
-              inactive-value="0"
-            ></el-switch>
-          </el-form-item> -->
           <!-- 文章简介 -->
           <el-form-item label="文章简介" prop="description" class="item_description">
             <el-input v-model="articleFrom.description" autocomplete="off"></el-input>
@@ -156,7 +162,7 @@
                 <img
                   v-if="articleFrom.cover_url"
                   :src="articleFrom.cover_url.startsWith('http') ? articleFrom.cover_url : BaseUrl + articleFrom.cover_url"
-                  style="width:146px;height:94px;border-radius:5px;object-fit:cover;"
+                  style="width: 146px; height: 94px; border-radius: 5px; object-fit: cover"
                 />
                 <div v-else>
                   <el-icon><Plus /></el-icon>
@@ -165,21 +171,21 @@
             </el-upload>
             <div v-if="articleFrom.cover_url" class="article_minpic_previewer">
               <el-icon size="20"><zoom-in /></el-icon>
-              <el-icon size="20" @click="articleFrom.cover_url=''"><Delete /></el-icon>
+              <el-icon size="20" @click="articleFrom.cover_url = ''"><Delete /></el-icon>
             </div>
           </el-form-item>
           <!-- 文章内容 -->
           <el-form-item label="文章内容" prop="content">
             <el-input v-show="false" v-model="articleFrom.content"></el-input>
-            <div style="border: 1px solid #ccc;width:100%">
+            <div style="border: 1px solid #ccc; width: 100%">
               <Toolbar
-                style="border-bottom: 1px solid #ccc;"
+                style="border-bottom: 1px solid #ccc"
                 :editor="editorRef"
                 :defaultConfig="toolbarConfig"
                 :mode="mode"
               />
               <Editor
-                style="height: 300px; overflow-y: hidden;"
+                style="height: 300px; overflow-y: hidden"
                 v-model="articleFrom.content"
                 :defaultConfig="editorConfig"
                 :mode="mode"
@@ -191,19 +197,14 @@
         </el-form>
       </template>
       <template #footer>
-        <el-button @click="closeHandler">关  闭</el-button>
-        <el-button type="primary" @click="saveHandler" >保  存</el-button>
+        <el-button @click="closeHandler">关 闭</el-button>
+        <el-button type="primary" @click="saveHandler">保 存</el-button>
       </template>
     </el-drawer>
 
     <!-- vue-cropper -->
-    <el-dialog
-      v-if="showCropper"
-      v-model="showCropper"
-      draggable
-      width="800"
-    >
-      <Cropper :img-file="cropperFile" @cropperDone="uploadHandler" />
+    <el-dialog v-if="showCropper" v-model="showCropper" draggable width="800">
+      <Cropper :img-file="cropperFile || ''" @cropperDone="uploadHandler" @cropperCancel="closeCropper" />
     </el-dialog>
 
     <!-- comments -->
@@ -212,13 +213,13 @@
       v-model="showComment"
       draggable
       width="800"
-      :title="`文章「${curComment.title}」的评论`"
+      :title="`文章「${curComment?.title}」的评论`"
     >
       <template #default>
-        <el-table :data="curComment.comments" :border="true" style="width: 100%">
+        <el-table :data="curComment?.comments" :border="true" style="width: 100%">
           <el-table-column prop="created_at" label="日期">
             <template #default="scope">
-              <p>{{ new Date(scope.row.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</p>
+              <p>{{ formatDate(scope.row.created_at) }}</p>
             </template>
           </el-table-column>
           <el-table-column prop="nickname" label="用户"></el-table-column>
@@ -244,32 +245,50 @@
       </template>
       <template #footer>
         <div>
-          <el-button @click="curComment=null;showComment=false;">取 消</el-button>
+          <el-button @click="curComment = null; showComment = false">取 消</el-button>
         </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import ServerAPI from '@/api/server'
 import { ref, reactive, shallowRef, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
-import { ElMessage } from 'element-plus'
+import type { IDomEditor } from '@wangeditor/editor'
+import type { ArticleItem, CategoryItem, CommentItem } from '@/types/api'
+import { ElMessage, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
 import Cropper from './Widgets/Cropper.vue'
-import '@wangeditor/editor/dist/css/style.css' // 引入 css
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
-const editorRef = shallowRef()
+import '@wangeditor/editor/dist/css/style.css'
+
+const BaseUrl = import.meta.env.VITE_MEDIA_URL || ''
+
+const editorRef = shallowRef<IDomEditor | null>(null)
 const toolbarConfig = ref({})
 const editorConfig = ref({ placeholder: '请输入文章内容...' })
-const mode = ref('default')
-const handleCreated = (editor) => {
-  editorRef.value = editor // 记录 editor 实例，重要！
-  editor.getMenuConfig("uploadImage").customUpload = (file, insertFn) => {
-    let tempForm = new FormData();
-    tempForm.append('file', file);
-    ServerAPI.picUpload(tempForm).then(res => {
-      if (res.code==1) {
+const mode = ref<'default' | 'simple'>('default')
+
+interface ArticleFrom {
+  title: string
+  category_id: number | null
+  cate_name?: string
+  description: string
+  is_published: string
+  is_pinned: string
+  content: string
+  video_url: string
+  cover_url: string
+  id?: number
+}
+
+const handleCreated = (editor: IDomEditor) => {
+  editorRef.value = editor
+  editor.getMenuConfig('uploadImage').customUpload = (file: File, insertFn: (...args: unknown[]) => void) => {
+    const tempForm = new FormData()
+    tempForm.append('file', file)
+    ServerAPI.picUpload(tempForm).then((res) => {
+      if (res?.code === 1) {
         insertFn(BaseUrl + res.imageUrl)
       } else {
         alert('上传失败!')
@@ -277,29 +296,32 @@ const handleCreated = (editor) => {
     })
   }
 }
-const handleChange = (editor) => {
-  const html = editor.getHtml();
+
+const handleChange = (editor: IDomEditor) => {
+  const html = editor.getHtml()
   articleFrom.content = html
 }
-const articleData = ref([])
-const categoryData = ref([])
+
+const articleData = ref<ArticleItem[]>([])
+const categoryData = ref<CategoryItem[]>([])
 const pageSize = ref(5)
-const total = ref(1) // 总条数
-const pages = ref(1) // 总页数
-const curPage = ref(1) // 当前页
-const articleFromRef = ref(null)
-const articleFrom = reactive({
+const total = ref(1)
+const pages = ref(1)
+const curPage = ref(1)
+
+const articleFromRef = ref<FormInstance>()
+const articleFrom = reactive<ArticleFrom>({
   title: '',
   category_id: null,
   description: '',
   is_published: '0',
   is_pinned: '0',
-  // is_built_in: '0',
   content: '',
   video_url: '',
   cover_url: ''
 })
-const articleFromRules = reactive({
+
+const articleFromRules = reactive<FormRules<ArticleFrom>>({
   title: [{ required: true, message: '请填写文章标题', trigger: 'blur' }],
   is_published: [{ required: true }],
   is_pinned: [{ required: true }],
@@ -309,148 +331,200 @@ const articleFromRules = reactive({
   video_url: [{ required: true, message: '请完善视频连接' }],
   cover_url: [{ required: true, message: '请上传一张封面图' }]
 })
+
 const showCropper = ref(false)
-const cropperFile = ref(null)
+const cropperFile = ref<string | null>(null)
+
 /* **********drawer配置********** */
 const drawerTitle = computed(() => {
-  return drawerType.value == 'add' ? '添加文章' : '编辑文章'
+  return drawerType.value === 'add' ? '添加文章' : '编辑文章'
 })
-const drawerType = ref('add')
+const drawerType = ref<'add' | 'edit'>('add')
 const drawerVisible = ref(false)
 const isVlogType = computed(() => {
-  return categoryData.value.find(v => v.id == articleFrom.category_id)?.name == 'Vlog'
+  return categoryData.value.find(v => v.id === articleFrom.category_id)?.name === 'Vlog'
 })
 /* ***************************** */
+
 const showComment = ref(false)
-const curComment = ref({})
-/** 表格数据刚写入时 el-switch 可能误触发 change，此期间不调用保存接口 */
+type ArticleWithComments = ArticleItem & { comments?: CommentItem[] }
+const curComment = ref<ArticleWithComments | null>(null)
 const ignoreTableSwitchChange = ref(false)
 
-function normalizeArticleRow(row) {
-  const toSwitch = (v) => (v === 1 || v === '1' || v === true ? '1' : '0')
-  return {
-    ...row,
-    is_pinned: toSwitch(row.is_pinned),
-    is_published: toSwitch(row.is_published),
-  }
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  const seconds = String(date.getSeconds()).padStart(2, '0')
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 }
 
-function checkComment(row) {
-  ServerAPI.getArticleComment({ id: row.id })
-    .then(res => {
-      curComment.value = row
-      curComment.value.comments = res
-    })
-    .then(() => {
-      showComment.value = true
-    })
+function checkComment(row: ArticleItem) {
+  ServerAPI.getArticleComment({ id: row.id }).then((res) => {
+    curComment.value = row
+    const comments = Array.isArray(res) ? res : (res.data || [])
+    curComment.value.comments = comments
+  }).then(() => {
+    showComment.value = true
+  })
 }
-function checkCommentDetail(row) {}
-function delComment(row) {
-  ServerAPI.delArticleComment({id: row.id})
-    .then(() => {
-      ElMessage.success('删除成功')
-      curComment.value.comments = curComment.value.comments.filter(v => v.id != row.id)
-      curComment.value.comment_num--
-    })
+
+function checkCommentDetail(_row: CommentItem) {
+  // 可以扩展查看评论详情
 }
-async function edit(row) {
+
+function delComment(row: CommentItem) {
+  ServerAPI.delArticleComment({ id: row.id }).then(() => {
+    ElMessage.success('删除成功')
+    if (curComment.value) {
+      curComment.value.comments = curComment.value.comments?.filter((v: CommentItem) => v.id !== row.id) || []
+      curComment.value.comment_num = Math.max((curComment.value.comment_num || 1) - 1, 0)
+    }
+  })
+}
+
+async function edit(row: ArticleItem) {
   drawerType.value = 'edit'
   drawerVisible.value = true
   Object.assign(articleFrom, row)
   await nextTick()
-  editorRef.value.setHtml(row.content)
+  editorRef.value?.setHtml(row.content)
 }
-async function toggleSomeKey(row) {
+
+async function toggleSomeKey(row: ArticleItem) {
   if (ignoreTableSwitchChange.value) return
-  const res = await ServerAPI.editArticle({ ...row })
-  if (res.code == 1) {
+  Object.assign(articleFrom, row)
+  const res = await ServerAPI.editArticle(articleFrom)
+  if (res.code === 1) {
     ElMessage.success('修改成功✌️')
   }
 }
-function del(id) {
-  ServerAPI.delArticle({ id })
-    .then(res => {
-      if (res.code == 1) {
-        ElMessage.success('删除成功')
-        getArticleData()
+
+function del(id: number) {
+  ServerAPI.delArticle({ id }).then((res) => {
+    if (res.code === 1) {
+      ElMessage.success('删除成功')
+      getArticleData()
+    }
+  })
+}
+
+function handleCrop(files: UploadFile) {
+  // 直接使用本地预览
+  if (files.url) {
+    cropperFile.value = files.url
+    showCropper.value = true
+  } else if (files.raw) {
+    // 如果没有url，创建本地预览
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      cropperFile.value = e.target?.result as string
+      showCropper.value = true
+    }
+    reader.readAsDataURL(files.raw)
+  }
+}
+
+function uploadHandler(file: Blob) {
+  const ext = file.type.split('/')[1] || 'jpg'
+  const filename = `cover_${Date.now()}.${ext}`
+  const uploadFile = new File([file], filename, { type: file.type || 'image/jpeg' })
+  const formData = new FormData()
+  formData.append('file', uploadFile)
+  ServerAPI.picUpload(formData)
+    .then((res) => {
+      if (res.code === 1 && res.imageUrl) {
+        ElMessage.success('封面上传成功~')
+        articleFrom.cover_url = res.imageUrl
+        closeCropper()
       }
     })
-}
-function handleCrop (files) {
-  cropperFile.value = files.url
-  showCropper.value = true
-}
-function uploadHandler (file) {
-  const imgData = new FormData();
-  const fileName = 'cover_' + new Date().Format('yyyy_MM_dd_hh_mm_ss') + '.'
-  const fileOfBlob = new File([file], fileName + file.type.split('/')[1]);
-  imgData.append('file', fileOfBlob);
-  imgData.image = fileOfBlob;
-  ServerAPI.picUpload(imgData)
-    .then(res => {
-      ElMessage.success('封面上传成功~')
-      articleFrom.cover_url = res.imageUrl
-      showCropper.value = false
-      cropperFile.value = null
-    })
-    .catch(err => {
-      console.log(err)
+    .catch(() => {
+      ElMessage.error('封面上传失败')
     })
 }
+
+function closeCropper() {
+  showCropper.value = false
+  cropperFile.value = null
+}
+
+function normalizeArticleRow(row: ArticleItem): ArticleItem {
+  const toSwitch = (v: unknown): string => {
+    return v === 1 || v === '1' || v === true ? '1' : '0'
+  }
+  return {
+    ...row,
+    is_pinned: toSwitch(row.is_pinned),
+    is_published: toSwitch(row.is_published)
+  }
+}
+
 async function getArticleData() {
   ignoreTableSwitchChange.value = true
   try {
     const params = { pageNo: curPage.value, pageSize: pageSize.value }
     await ServerAPI.getArticleList(params).then((res) => {
-      const rows = Array.isArray(res.data) ? res.data : []
-      total.value = rows[0]?.total || 0
+      const apiData = res.data || []
+      total.value = apiData?.[0]?.total || 0
       pages.value = Math.ceil(total.value / pageSize.value)
-      articleData.value = rows.map(normalizeArticleRow)
+      articleData.value = apiData.map(normalizeArticleRow)
     })
     await nextTick()
   } finally {
     ignoreTableSwitchChange.value = false
   }
 }
+
 async function getCateData() {
-  await ServerAPI.getCategoryList()
-    .then(res => {
-      categoryData.value = res.data
-    })
+  await ServerAPI.getCategoryList().then((res) => {
+    const apiData = res.data || []
+    categoryData.value = apiData || []
+  })
 }
-function pageChange(currentPage) { // 点击分页按钮
+
+function pageChange(currentPage: number) {
   curPage.value = currentPage
   getArticleData()
 }
+
 function openEditor() {
   drawerVisible.value = true
 }
+
 function saveHandler() {
-  articleFromRef.value.validate(async (valid, fields) => {
+  articleFromRef.value?.validate(async (valid, fields) => {
     if (!valid) {
       for (const key in fields) {
         if (Object.prototype.hasOwnProperty.call(fields, key)) {
-          const item = fields[key];
-          ElMessage.error(item[0]?.message)
+          const item = fields[key]
+          if (item && item[0]) {
+            ElMessage.error(item[0].message)
+          }
         }
       }
       return
     }
-    const res = drawerType.value=='add'
-      ? await ServerAPI.addArticle(articleFrom)
-      : await ServerAPI.editArticle(articleFrom)
+    const res =
+      drawerType.value === 'add'
+        ? await ServerAPI.addArticle(articleFrom)
+        : await ServerAPI.editArticle(articleFrom)
     const successMsg = {
-      'add': '添加文章成功✌️',
-      'edit': '文章修改成功✌️'
+      add: '添加文章成功✌️',
+      edit: '文章修改成功✌️'
     }
-    if (res.code == 1) {
+    if (res.code === 1) {
       ElMessage.success(successMsg[drawerType.value])
       closeHandler()
       getArticleData()
     }
   })
 }
+
 function closeHandler() {
   drawerVisible.value = false
   Object.assign(articleFrom, {
@@ -464,11 +538,12 @@ function closeHandler() {
     cover_url: ''
   })
 }
+
 onMounted(async () => {
   await getCateData()
   await getArticleData()
 })
-// 组件销毁时，也及时销毁编辑器
+
 onBeforeUnmount(() => {
   const editor = editorRef.value
   if (editor == null) return
@@ -479,21 +554,26 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 #articleManager {
   margin: 10px;
+
   .el-form-item.item_title {
     width: 30%;
   }
+
   .el-form-item.item_category {
     width: 300px;
   }
+
   .el-form-item.item_description {
     width: 80%;
   }
+
   .article_minpic_uploader {
     :deep(.el-upload) {
       width: 148px;
       height: 96px;
     }
   }
+
   .article_minpic_previewer {
     width: 148px;
     height: 96px;
@@ -503,17 +583,21 @@ onBeforeUnmount(() => {
     justify-content: center;
     align-items: center;
     border-radius: 3px;
+
     &:hover {
-      background-color: rgba(0,0,0,.5);
+      background-color: rgba(0, 0, 0, 0.5);
+
       .el-icon {
         opacity: 1;
         color: #fff;
       }
     }
+
     .el-icon {
       opacity: 0;
       cursor: pointer;
     }
+
     .el-icon:first-child {
       margin-right: 20px;
     }

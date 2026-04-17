@@ -1,22 +1,21 @@
+
 <template>
   <RouterView />
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
+
 watch(
-  () => route.meta,
-  (newMeta, oldMeta) => {
-    if (oldMeta && oldMeta.bodyClass) {
-      document.documentElement.classList.remove(oldMeta.bodyClass);
-    }
-    if (newMeta && newMeta.bodyClass) {
-      document.documentElement.classList.add(newMeta.bodyClass);
-    }
+  () => route.meta.bodyClass as string | undefined,
+  (newClass, oldClass) => {
+    oldClass && document.documentElement.classList.remove(oldClass);
+    newClass && document.documentElement.classList.add(newClass);
   },
   { immediate: true }
 );
+
 </script>

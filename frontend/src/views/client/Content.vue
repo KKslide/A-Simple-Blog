@@ -15,7 +15,7 @@
           <span class="split"></span>
           <div class="c_i_icon comment">
             <el-icon size="14"><Comment /></el-icon>
-            <span>{{ contentObj?.comment?.length || 0 }}</span>
+            <span>{{ Array.isArray(contentObj?.comment) ? contentObj.comment.length : 0 }}</span>
           </div>
           <span class="split"></span>
           <div class="c_i_icon category">
@@ -25,7 +25,7 @@
           <span class="split"></span>
           <div class="c_i_icon time">
             <el-icon size="14"><Clock /></el-icon>
-            <span>{{ new Date(contentObj?.created_at||0).Format('yyyy-MM-dd hh:mm:ss') }}</span>
+            <span>{{ dayjs(contentObj?.created_at || 0).format('YYYY-MM-DD HH:mm:ss') }}</span>
           </div>
         </div>
         <div ref="contentRef" class="content_html" v-html="contentObj?.content"></div>
@@ -33,7 +33,13 @@
         <!-- 视频部分 -->
         <div class="plyr-wrapper" v-if="contentObj.category == 'Vlog' && showPlayer">
           <vue-plyr>
-            <video :key="contentObj.video_url" controls crossorigin playsinline :poster="contentObj.cover_url.startsWith('http') ? contentObj.cover_url : BaseUrl + contentObj.cover_url">
+            <video
+              :key="contentObj.video_url"
+              controls
+              crossorigin="anonymous"
+              playsinline
+              :poster="contentObj.cover_url.startsWith('http') ? contentObj.cover_url : BaseUrl + contentObj.cover_url"
+            >
               <source :src="vlogVideoUrl" type="video/mp4" />
             </video>
           </vue-plyr>
@@ -84,10 +90,10 @@
          <el-row>
           <el-col :span="23" :offset=1>
             <div class="content_comment_list">
-              <div class="content_comment_item" v-for="(item, index) in contentObj?.comment || []" :key="index">
+              <div class="content_comment_item" v-for="(item, index) in (Array.isArray(contentObj?.comment) ? contentObj.comment : [])" :key="index">
                 <div class="c_m_i_detail mail">{{ item.nickname }}:</div>
                 <div class="c_m_i_detail content">{{ item.content }}</div>
-                <div class="c_m_i_detail time">{{ new Date(item.created_at).Format('yyyy-MM-dd hh:mm:ss') }}</div>
+                <div class="c_m_i_detail time">{{ dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss') }}</div>
                 <el-divider />
               </div>
             </div>
@@ -108,15 +114,17 @@
   </div>
 </template>
 
-<script setup>
-defineOptions({ name: 'content' })
+<script setup lang="ts">
+defineOptions({ name: 'ContentPage' })
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, type FormInstance } from 'element-plus'
 import ClientAPI from '@/api/client/index'
-import { hljs } from '@/utils/config'
+import hljs from 'highlight.js'
 import { useLangStore } from '@/stores/langStore'
 import { useI18n } from 'vue-i18n'
+import type { ContentConfig, ContentResponse, CommentItemConfig } from '@/interfaces'
+import { dayjs } from '@/config/config'
 const { t } = useI18n()
 const texts = computed(() => ({
   commentPlaceHolder: t('logContent.commentPlaceHolder'),
@@ -127,14 +135,28 @@ const texts = computed(() => ({
 const emptyCommentTip = computed(() => t('logContent.emptyCommentTip'))
 const emptyVisitor = computed(() => t('logContent.emptyVisitor'))
 const langStore = useLangStore()
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
-const contentObj = ref({})
-const prevObj = ref({})
-const nextObj = ref({})
+const BaseUrl = import.meta.env.VITE_MEDIA_URL || ''
+const contentObj = ref<ContentConfig>({
+  id: 0,
+  title: '',
+  category: '',
+  category_id: 0,
+  content: '',
+  description: '',
+  created_at: '',
+  view_count: 0,
+  cover_url: '',
+  video_url: '',
+  is_published: 0,
+  is_del: 0,
+  comment: []
+})
+const prevObj = ref<ContentConfig | undefined>(undefined)
+const nextObj = ref<ContentConfig | undefined>(undefined)
 const showPlayer = ref(false)
 const showPreview = ref(false)
 const previewIndex = ref(0)
-const commentFormRef = ref(null)
+const commentFormRef = ref<FormInstance | null>(null)
 const route = useRoute()
 const router = useRouter()
 const commentForm = reactive({
@@ -145,30 +167,37 @@ const commentRules = reactive({
   comment: [{ required: true, message: emptyCommentTip, trigger: 'blur' }],
   name: [{ required: true, message: emptyVisitor, trigger: 'blur' }]
 })
-const contentRef = ref(null)
-const previewImgList = reactive([])
+const contentRef = ref<HTMLElement | null>(null)
+const previewImgList = reactive<string[]>([])
 const categoryBannerUrl = computed(() => {
-  return contentObj.value.category_banner_url?.startsWith('http') ? contentObj.value.category_banner_url : BaseUrl + contentObj.value.category_banner_url
+  const banner = contentObj.value.category_banner_url || ''
+  return banner.startsWith('http') ? banner : BaseUrl + banner
 })
 const vlogVideoUrl = computed(() => {
-  return contentObj.value.video_url?.startsWith('http') ? contentObj.value.video_url : BaseUrl + contentObj.value.video_url
+  const video = contentObj.value.video_url || ''
+  return video.startsWith('http') ? video : BaseUrl + video
 })
 function resetForm() {
-  commentFormRef.value.resetFields()
+  commentFormRef.value?.resetFields()
 }
-function sendComment(data) {
-  commentFormRef.value.validate(valid => {
+function sendComment(data: { comment: string; name: string }) {
+  commentFormRef.value?.validate((valid: boolean) => {
     if (valid) {
-      const { id: contentid } = contentObj.value
+      const { id: contentid } = contentObj.value as ContentConfig
       const { comment, name: visitor } = data
-      const params = { contentid, nickname: visitor, content: comment }
+      const params = { contentid, content: comment ?? '', nickname: visitor ?? '' }
       ClientAPI.postBlogComment(params)
-        .then(res => {
-          contentObj.value.comment.unshift({
-            nickname: visitor,
-            content: comment,
-            created_at: new Date().Format('yyyy-MM-dd hh:mm:ss')
-          })
+        .then(() => {
+          if (Array.isArray(contentObj.value.comment)) {
+            const localComment: CommentItemConfig = {
+              id: Date.now(),
+              article_id: contentid,
+              nickname: visitor ?? '',
+              content: comment ?? '',
+              created_at: dayjs().format('YYYY-MM-DD HH:mm:ss')
+            }
+            contentObj.value.comment.unshift(localComment)
+          }
           resetForm()
           ElMessage({
             message: 'Thanks for your comment',
@@ -182,26 +211,28 @@ function sendComment(data) {
   })
 }
 function getContentData() {
-  let { id } = route.params
+  const { id } = route.params as { id: string }
   ClientAPI.getBlogContent({ contentid: Number(id) })
     .then(async res => {
-      if (res.code == 0) {
-        alert(res.msg)
+      const response = res as ContentResponse
+      if (response.code == 0) {
+        alert(response.msg)
       }
       else {
-        const { prev, cur, next } = res
+        const { prev, cur, next } = response
+        if (!cur) return
         contentObj.value = cur
-        prevObj.value = prev
-        nextObj.value = next
+        prevObj.value = prev as ContentConfig | undefined
+        nextObj.value = next as ContentConfig | undefined
         showPlayer.value = false
         setTimeout(() => {
           if (cur.category == 'Vlog') showPlayer.value = true
         }, 0);
         await nextTick()
         previewImgList.length = 0
-        const imgs = contentRef.value.querySelectorAll('img')
-        imgs.forEach((v, i) => {
-          previewImgList.push(v.src)
+        const imgs = contentRef.value?.querySelectorAll('img')
+        imgs?.forEach((v, i) => {
+          previewImgList.push(v.src as string)
           v.onclick = () => {
             previewIndex.value = i
             showPreview.value = true
@@ -213,8 +244,10 @@ function getContentData() {
       console.log(err)
     })
 }
-function checkPrevOrNext(id) {
-  router.push(`/content/${id}`)
+function checkPrevOrNext(id: number | undefined) {
+  if (id) {
+    router.push(`/content/${id}`)
+  }
 }
 onMounted(() => {
   getContentData()
@@ -224,11 +257,11 @@ watch(
   async () => {
     await nextTick()
     contentRef.value
-      .querySelectorAll('.content_html pre code')
-      .forEach((el) => hljs.highlightElement(el))
+      ?.querySelectorAll('.content_html pre code')
+      .forEach((el) => hljs.highlightElement(el as HTMLElement))
 
-    const pTags = contentRef.value.querySelectorAll('.content_html p')
-    pTags.forEach(p => {
+    const pTags = contentRef.value?.querySelectorAll('.content_html p')
+    pTags?.forEach(p => {
       if (p.querySelector('img')) {
         p.classList.add('has_image')
       }

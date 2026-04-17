@@ -14,43 +14,58 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist'
 
 // 指定 worker（Vite-friendly）
 GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
 
+type PdfSource = string | Uint8Array | Record<string, unknown>
+
 const props = defineProps({
   src: { type: [String, Uint8Array, Object], required: true } // 支持 URL 或 ArrayBuffer/Uint8Array 等
-})
+}) as { src: PdfSource }
 
-const canvas = ref(null)
-const wrap = ref(null)
-let pdfDoc = null
+const canvas = ref<HTMLCanvasElement | null>(null)
+const wrap = ref<HTMLDivElement | null>(null)
+type PdfViewportLike = { height: number; width: number }
+type PdfPageLike = {
+  getViewport: (opts: { scale: number; offsetY?: number }) => PdfViewportLike
+  render: (ctx: { canvasContext: CanvasRenderingContext2D; viewport: PdfViewportLike }) => {
+    promise: Promise<void>
+  }
+}
+type PdfDocLike = { numPages: number; getPage: (n: number) => Promise<PdfPageLike>; destroy: () => void }
+
+let pdfDoc: PdfDocLike | null = null
 const pageNum = ref(1)
 const numPages = ref(0)
 const scale = ref(1)
 
-async function loadPdf(src) {
+type PdfJsGetDocumentParam = string | Uint8Array | Record<string, unknown>
+
+async function loadPdf(src: PdfSource) {
   // 支持传入 URL 或 ArrayBuffer/Uint8Array
-  const loadingTask = getDocument(src)
-  pdfDoc = await loadingTask.promise
+  const loadingTask = getDocument(src as unknown as PdfJsGetDocumentParam)
+  pdfDoc = (await loadingTask.promise) as unknown as PdfDocLike
   numPages.value = pdfDoc.numPages
   pageNum.value = 1
   await renderPage(pageNum.value)
 }
 
-async function renderPage(num) {
+async function renderPage(num: number) {
   if (!pdfDoc) return
   const page = await pdfDoc.getPage(num)
   const viewport = page.getViewport({ scale: scale.value, offsetY: -80 })
 
   const c = canvas.value
+  if (!c) return
   const context = c.getContext('2d')
+  if (!context) return
 
   c.height = viewport.height
-  c.width  = viewport.width
+  c.width = viewport.width
 
   const renderContext = {
     canvasContext: context,

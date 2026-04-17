@@ -17,19 +17,19 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessageBox } from 'element-plus'
-const dom = ref(null)
+const dom = ref<HTMLDivElement>()
 const curID = ref('one')
 const navs = ref([
   { id: 'one', name: 'HTML' },
   { id: 'two', name: 'CSS' },
   { id: 'three', name: 'JavaScript' },
 ])
-function scroll (id) {
+function scroll (id: string) {
   curID.value = id
-  document.getElementById(id).scrollIntoView({
+  document.getElementById(id)?.scrollIntoView({
     behavior: 'smooth'
   })
 }
@@ -37,7 +37,7 @@ onMounted(() => {
   ElMessageBox.alert('', '禁止掉滚动事件了.. 🥹点击nav就好', {
     confirmButtonText: '试试看🥵',
     callback: () => {
-      dom.value.addEventListener('wheel', function (e) {
+      dom.value!.addEventListener('wheel', function (e: WheelEvent) {
         e.stopPropagation(); // 阻止事件冒泡
         e.preventDefault();  // 阻止滚动
       }, { passive: false });

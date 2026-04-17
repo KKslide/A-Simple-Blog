@@ -5,7 +5,7 @@ export const useLangStore = defineStore('lang', {
     currentLang: ''
   }),
   actions: {
-    setLang(language) {
+    setLang(language: string) {
       this.currentLang = language
     }
   }

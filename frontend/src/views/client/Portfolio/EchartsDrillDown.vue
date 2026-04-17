@@ -7,7 +7,7 @@
   </el-row>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, shallowRef, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import utils from '@/utils'
 import * as echarts from 'echarts/core'
@@ -16,9 +16,21 @@ import {
   TitleComponent,
   TooltipComponent,
   GeoComponent,
+  type TitleComponentOption,
+  type TooltipComponentOption,
+  type GeoComponentOption
 } from 'echarts/components'
-import { MapChart } from 'echarts/charts'
+import { MapChart, type MapSeriesOption } from 'echarts/charts'
 import { CanvasRenderer } from 'echarts/renderers'
+
+// 组合 ECharts 的配置类型
+type EChartsConfig = echarts.ComposeOption<
+  | TitleComponentOption
+  | TooltipComponentOption
+  | GeoComponentOption
+  | MapSeriesOption
+>
+
 echarts.use([
   TitleComponent,
   TooltipComponent,
@@ -26,16 +38,28 @@ echarts.use([
   MapChart,
   CanvasRenderer
 ])
-const echartRef = ref(null)
-const echartInstance = shallowRef(null)
-const echartsConfig = reactive({
+
+// 定义区域状态接口
+interface AreaState {
+  province: string
+  city: string
+}
+
+// 1. DOM 引用，初始为 null，挂载后为 HTMLElement
+const echartRef = ref<HTMLElement | null>(null)
+
+// 2. ECharts 实例，使用 shallowRef 避免深层响应式导致的性能问题
+const echartInstance = shallowRef<echarts.ECharts | null>(null)
+
+// 3. ECharts 配置项，指定类型
+const echartsConfig = reactive<EChartsConfig>({
   tooltip: {
     trigger: 'item'
   },
   title: {
     text: '全国地图',
-    x: 'center',
-    y: 'top',
+    left: 'center', // x: 'center' 在新版 ECharts 推荐用 left
+    top: 'top',     // y: 'top' 推荐用 top
     textAlign: 'left'
   },
   geo: {
@@ -43,25 +67,31 @@ const echartsConfig = reactive({
     roam: true,
     label: {
       show: true,
+      color: '#333', // textBorderColor 通常配合 color 使用，此处保留原逻辑
       textBorderColor: '#fff',
       textBorderWidth: 2
     },
-    emphasis: { // 高亮状态下的样式
+    emphasis: {
       label: { show: true },
       itemStyle: {
         areaColor: '#ffde33'
       }
     }
   },
-  series: [] // series 我们可以在渲染时动态添加，或者保持为空，因为 geo 组件本身就能显示地图
+  series: []
 })
-const mapData = reactive({})
-const currentArea = reactive({
+
+const mapData = reactive<Record<string, unknown>>({})
+
+const currentArea = reactive<AreaState>({
   province: '',
   city: ''
 })
+
 const handleResize = utils._debounce(chartsResize, 200)
-function clickHandler(params) {
+
+// ECharts 点击事件参数类型通常包含 name, value 等
+function clickHandler(params: { name?: string }) {
   /**
    * 判断是省份, 还是城市
    * ① 特别行政区（2个）：香港、澳门
@@ -70,60 +100,92 @@ function clickHandler(params) {
    * ④ 省（23个）
    */
   const specialDistrict = ['香港', '澳门', '北京', '天津', '上海', '重庆']
-  if ('南海诸岛'.includes(params.name)) return
-  if (!Object.values(currentArea).some(v=>!v)) return
-  if (currentArea.province == '') {
-    currentArea.province = params.name
-  }
-  else {
+
+  if (params.name && '南海诸岛'.includes(params.name)) return
+
+  // 检查是否已经钻取到底 (province 和 city 都有值)
+  // Object.values(currentArea) 返回 string[], some 检查是否存在空字符串
+  // !v 表示空字符串。 some(v=>!v) 为 true 表示有空的（没到底）。
+  // !some(...) 为 true 表示全都有值（到底了）。
+  if (!Object.values(currentArea).some(v => !v)) return
+
+  if (currentArea.province === '') {
+    currentArea.province = params.name || ''
+  } else {
     if (specialDistrict.includes(currentArea.province)) return
-    currentArea.city = params.name
+    currentArea.city = params.name || ''
   }
 }
-async function getMap(params = {}) {
+
+async function getMap(params: Partial<AreaState> = {}) {
+  // todo 为 ClientAPI.getMapData 添加泛型返回类型
   return await ClientAPI.getMapData(params)
 }
+
 function backProvince() {
   currentArea.city = ''
 }
+
 function backCountry() {
-  currentArea.province=''
+  currentArea.province = ''
   currentArea.city = ''
 }
+
 function chartsResize() {
   try {
-    echartInstance.value.resize()
+    echartInstance.value?.resize()
   } catch (error) {
     console.log('error ==>>>', error)
   }
 }
+
 watch(
   () => currentArea,
-  val => {
-    getMap(currentArea)
-      .then(res => {
-        const { province, city } = currentArea
-        const mapName = province || city || 'china'
-        echarts.registerMap(mapName, res)
+  () => {
+    getMap(currentArea).then(res => {
+      const { province, city } = currentArea
+      const mapName = province || city || 'china'
+
+      // 注册地图
+      echarts.registerMap(mapName, res as any)
+
+      // 更新配置
+      if (echartsConfig.geo) {
         echartsConfig.geo.map = mapName
+      }
+      if (echartsConfig.title && !Array.isArray(echartsConfig.title)) {
         echartsConfig.title.text = `${city || province || '中国'}地图`
-        echartInstance.value.setOption(echartsConfig, true)
-      })
+      }
+
+      // 设置选项
+      echartInstance.value?.setOption(echartsConfig, true)
+    })
   },
-{ deep: true })
+  { deep: true }
+)
+
 const showBackCountry = computed(() => {
-  return currentArea.province != ''
+  return currentArea.province !== ''
 })
+
 const showBackProvince = computed(() => {
-  return currentArea.city != ''
+  return currentArea.city !== ''
 })
+
 onMounted(() => {
+  if (!echartRef.value) return
+
   getMap(currentArea)
     .then(res => {
       Object.assign(mapData, res)
-      echarts.registerMap('china', mapData)
-      echartInstance.value = echarts.init(echartRef.value)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      echarts.registerMap('china', mapData as any)
+
+      // 初始化实例
+      echartInstance.value = echarts.init(echartRef.value!)
       echartInstance.value.setOption(echartsConfig)
+
+      // 绑定点击事件
       echartInstance.value.on('click', clickHandler)
     })
     .then(() => {
@@ -133,16 +195,17 @@ onMounted(() => {
       console.log('err ===>>>>', err)
     })
 })
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
-  echartInstance.value.dispose()
+  echartInstance.value?.dispose()
 })
 </script>
 
 <style lang="scss" scoped>
 #echartDrillDown {
   width: 100%;
-  height: 70vh;
+  height: 60vh;
   background-color: #f2f2f2;
 }
 </style>

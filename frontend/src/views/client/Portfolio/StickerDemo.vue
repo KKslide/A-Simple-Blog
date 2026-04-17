@@ -9,12 +9,9 @@
   </el-row>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
 import Sticker from '../Widgets/Sticker.vue';
-const someData = ref([
-  { id:1, name: '拖拽我' }
-])
+
 </script>
 
 <style lang="scss" scoped>

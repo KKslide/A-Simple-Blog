@@ -1,8 +1,13 @@
 <template>
   <div id="admin_home">
     <div class="admin_top_list" v-if="showTagData">
-      <a class="admin_top_list_item" v-for="(item, index) in tagData" :key="index"
-        :style="{ 'background': bgColors[index] }" @click="jump(item.href)">
+      <a
+        class="admin_top_list_item"
+        v-for="(item, index) in tagData"
+        :key="index"
+        :style="{ background: bgColors[index] }"
+        @click="jump(item.href)"
+      >
         <div class="admin_top_list_item_L">
           <p>{{ item.tag }}</p>
           <p>{{ item.value }}</p>
@@ -16,19 +21,20 @@
     </div>
     <div class="admin_mid_chart">
       <div class="line_chart">
-        <div id="lineChart" style="width:100%;height:100%;" ref="lineChartRef"></div>
+        <div id="lineChart" style="width: 100%; height: 100%" ref="lineChartRef"></div>
       </div>
       <div class="pie_chart">
-        <div id="pieChart" style="width:100%;height:100%;" ref="barChartRef"></div>
+        <div id="pieChart" style="width: 100%; height: 100%" ref="barChartRef"></div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import ServerAPI from '@/api/server'
 import { ref, reactive, shallowRef, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
+import type { DashboardPieItem, DashboardData, DashboardLineItem } from '@/types/api'
 import * as echarts from 'echarts/core'
 import utils from '@/utils'
 import { PieChart, LineChart } from 'echarts/charts'
@@ -36,10 +42,11 @@ import {
   TitleComponent,
   TooltipComponent,
   LegendComponent,
-  GridComponent,
+  GridComponent
 } from 'echarts/components'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
+
 echarts.use([
   PieChart,
   LineChart,
@@ -51,31 +58,55 @@ echarts.use([
   UniversalTransition,
   CanvasRenderer
 ])
-const bgColors = reactive(['#64b0f2', '#f1b53d', '#3db9dc', '#ff5d48'])
-const tagData = reactive([
-  { icon: "Document" },
-  { icon: "DataLine" },
-  { icon: "User" },
-  { icon: "Notebook", href: 'article' },
+
+interface TagDataItem {
+  tag: string
+  value: number
+  href?: string
+  icon: string
+}
+
+const bgColors = ['#64b0f2', '#f1b53d', '#3db9dc', '#ff5d48']
+
+const tagData = reactive<TagDataItem[]>([
+  { tag: '', value: 0, icon: 'Document' },
+  { tag: '', value: 0, icon: 'DataLine' },
+  { tag: '', value: 0, icon: 'User' },
+  { tag: '', value: 0, icon: 'Notebook', href: 'article' }
 ])
+
 const showTagData = ref(false)
-const lineChartRef = ref(null)
-const barChartRef = ref(null)
-const lineChartData = reactive({})
-const pieChartData = reactive([])
-const _Line_Chart_ = shallowRef(null)
-const _Pie_Chart_ = shallowRef(null)
+const lineChartRef = ref<HTMLElement | null>(null)
+const barChartRef = ref<HTMLElement | null>(null)
+
+interface LineChartData {
+  time: string[]
+  value: number[]
+}
+
+const lineChartData = reactive<LineChartData>({
+  time: [],
+  value: []
+})
+
+const pieChartData = reactive<DashboardPieItem[]>([])
+
+const _Line_Chart_ = shallowRef<echarts.ECharts | null>(null)
+const _Pie_Chart_ = shallowRef<echarts.ECharts | null>(null)
+
 const router = useRouter()
+
 const handleResize = utils._debounce(chartsResize, 200)
-function getData () {
+
+function getData() {
   ServerAPI.getDashboard()
-    .then(res => {
+    .then((apiData: DashboardData) => {
       const _tagData = tagData.map((v, i) => {
-        return v = Object.assign(res.tag_list[i], v)
+        return (v = Object.assign(apiData.tag_list?.[i] || {}, v))
       })
       Object.assign(tagData, _tagData)
-      Object.assign(lineChartData, fixedObj(res.line_chart_data))
-      Object.assign(pieChartData, res.pie_chart_data)
+      Object.assign(lineChartData, fixedObj(apiData.line_chart_data || []))
+      Object.assign(pieChartData, apiData.pie_chart_data || [])
       showTagData.value = true
     })
     .then(() => {
@@ -86,7 +117,10 @@ function getData () {
       window.addEventListener('resize', handleResize)
     })
 }
-function setLineData () {
+
+function setLineData() {
+  if (!lineChartRef.value) return
+
   _Line_Chart_.value = echarts.init(lineChartRef.value)
   _Line_Chart_.value.setOption({
     title: {
@@ -94,27 +128,24 @@ function setLineData () {
       x: 'left',
       y: 'top',
       textStyle: {
-        color: "#FFF",
-        fontWeight: "bold"
+        color: '#FFF',
+        fontWeight: 'bold'
       }
     },
     tooltip: {
       trigger: 'axis',
-      formatter: function (params) {
+      formatter: function (params: unknown[]) {
+        const param0 = params[0] as { axisValue: string; seriesName: string; value: unknown }
         return `<div>
                   <span style="display:inline-block;width:8px;height:8px;background:#3db9dc;border-radius:50%;"></span>
-                  时间：${params[0].axisValue}:00</div>
+                  时间：${param0.axisValue}:00</div>
                   <div><span style="display:inline-block;width:8px;height:8px;background:#f1b53d;border-radius:50%;"></span>
-                  ${params[0].seriesName + ": " + params[0].value}
-                </div>`;
+                  ${param0.seriesName + ': ' + param0.value}
+                </div>`
       }
     },
     legend: {
-      show: false,
-      // color: ["#F58080", "#47D8BE", "#F9A589"],
-      // data: ['新报', '流失', '续费'],
-      // left: 'center',
-      // bottom: 'bottom',
+      show: false
     },
     grid: {
       top: '15%',
@@ -126,15 +157,14 @@ function setLineData () {
     },
     xAxis: {
       type: 'category',
-      // data: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
       data: lineChartData.time,
       axisLine: {
         lineStyle: {
-          color: "#999"
+          color: '#999'
         }
       },
       axisLabel: {
-        color: "#FFF"
+        color: '#FFF'
       }
     },
     yAxis: {
@@ -148,17 +178,17 @@ function setLineData () {
       axisLine: {
         show: false,
         lineStyle: {
-          color: "#333"
-        },
+          color: '#333'
+        }
       },
       nameTextStyle: {
-        color: "#999"
+        color: '#999'
       },
       splitArea: {
         show: false
       },
       axisLabel: {
-        color: "#FFF"
+        color: '#FFF'
       },
       interval: 1
     },
@@ -167,24 +197,27 @@ function setLineData () {
         name: '访客数',
         type: 'line',
         data: lineChartData.value,
-        color: "#F58080",
+        color: '#F58080',
         lineStyle: {
           normal: {
             width: 5,
             color: {
               type: 'linear',
-
-              colorStops: [{
-                offset: 0,
-                color: '#FFCAD4' // 0% 处的颜色
-              }, {
-                offset: 0.4,
-                color: '#F58080' // 100% 处的颜色
-              }, {
-                offset: 1,
-                color: '#F58080' // 100% 处的颜色
-              }],
-              globalCoord: false // 缺省为 false
+              colorStops: [
+                {
+                  offset: 0,
+                  color: '#FFCAD4'
+                },
+                {
+                  offset: 0.4,
+                  color: '#F58080'
+                },
+                {
+                  offset: 1,
+                  color: '#F58080'
+                }
+              ],
+              globalCoord: false
             },
             shadowColor: 'rgba(245,128,128, 0.5)',
             shadowBlur: 10,
@@ -195,17 +228,18 @@ function setLineData () {
           normal: {
             color: '#F58080',
             borderWidth: 10,
-            /*shadowColor: 'rgba(72,216,191, 0.3)',
-             shadowBlur: 100,*/
-            borderColor: "#F58080"
+            borderColor: '#F58080'
           }
         },
-        smooth: true,
-      },
+        smooth: true
+      }
     ]
   })
 }
-function setPieChart () {
+
+function setPieChart() {
+  if (!barChartRef.value) return
+
   _Pie_Chart_.value = echarts.init(barChartRef.value)
   _Pie_Chart_.value.setOption({
     title: {
@@ -213,14 +247,14 @@ function setPieChart () {
       x: 'left',
       y: 'top',
       textStyle: {
-        color: "#FFF",
-        fontWeight: "bold"
+        color: '#FFF',
+        fontWeight: 'bold'
       }
     },
     color: ['#e38980', '#f7db88', '#85b6b2', '#6d4f8d', '#cd5e7e'],
     tooltip: {
       trigger: 'item',
-      formatter: "{a}[{b}] <br/>数量: {c}<br/>占比: {d}%"
+      formatter: '{a}[{b}] <br/>数量: {c}<br/>占比: {d}%'
     },
     calculable: true,
     series: [
@@ -233,7 +267,7 @@ function setPieChart () {
         itemStyle: {
           normal: {
             shadowBlur: 30,
-            shadowColor: 'rgba(40, 40, 40, 0.5)',
+            shadowColor: 'rgba(40, 40, 40, 0.5)'
           }
         },
         label: {
@@ -251,33 +285,35 @@ function setPieChart () {
     ]
   })
 }
+
 function chartsResize() {
   try {
-    _Line_Chart_.value.resize()
-    _Pie_Chart_.value.resize()
+    _Line_Chart_.value?.resize()
+    _Pie_Chart_.value?.resize()
   } catch (error) {
     console.log('error ==>>>', error)
   }
 }
-function jump (href) {
+
+function jump(href?: string) {
   if (!href) return
   router.push({ name: href })
 }
-function fixedObj (data) {
-  let obj = {}, keys = [];
-  data.forEach(e => keys = keys.concat(Object.keys(e))); // 先拿到所有的keys, 去重
-  Array.from(new Set([...keys])).forEach(ele => {
-    obj[ele] = data.map(val => val[ele])
-  });
-  return obj;
+
+function fixedObj(data: DashboardLineItem[]): LineChartData {
+  return {
+    time: data.map((item) => item.time),
+    value: data.map((item) => item.value)
+  }
 }
+
 onMounted(() => {
   getData()
 })
+
 onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize)
 })
-
 </script>
 
 <style lang="scss" scoped>
@@ -302,8 +338,8 @@ onBeforeUnmount(() => {
       div {
         width: 50%;
         display: flex;
-        justify-content: space-around; //x轴排列
-        align-items: center; //y轴排列
+        justify-content: space-around;
+        align-items: center;
       }
 
       .admin_top_list_item_L {
@@ -321,12 +357,8 @@ onBeforeUnmount(() => {
       }
 
       .admin_top_list_item_R {
-
-        // justify-content: center; //x轴排列
-        // align-items: center; //y轴排列
         i {
           font-size: 50px;
-          // font-weight: bold;
           color: #fff;
         }
       }
@@ -377,14 +409,6 @@ onBeforeUnmount(() => {
     .pie_chart {
       width: 40%;
     }
-  }
-
-  .admin_bottom_clock {
-    height: 35vh;
-    // position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
   }
 }
 </style>

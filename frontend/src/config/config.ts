@@ -52,6 +52,17 @@ const plyrOptions = {
   },
 }
 
+import dayjs from 'dayjs'
+import 'dayjs/locale/zh-cn' // 中文语言包
+import relativeTime from 'dayjs/plugin/relativeTime' // 相对时间
+import utc from 'dayjs/plugin/utc' // UTC
+import timezone from 'dayjs/plugin/timezone' // 时区
+
+dayjs.extend(relativeTime)
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.locale('zh-cn') // 设置为中文
+
 const portfoliosList = [
   {
     name: 'Scroll-Demo',
@@ -121,4 +132,4 @@ const portfoliosList = [
   }
 ]
 
-export { plyrOptions, hljs, portfoliosList }
+export { plyrOptions, hljs, portfoliosList, dayjs }

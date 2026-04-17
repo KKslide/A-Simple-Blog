@@ -11,7 +11,7 @@
         </el-col>
 
         <el-col class="router_link" :span="2">
-          <RouterLink :class="{ 'active': 'bloglist,searchlist'.includes(currentRoute) }" :to="{ name: 'bloglist' }">{{ $t('navbar.Blogs') }}</RouterLink>
+          <RouterLink :class="{ 'active': 'bloglist,searchlist'.includes(String(currentRoute)) }" :to="{ name: 'bloglist' }">{{ $t('navbar.Blogs') }}</RouterLink>
         </el-col>
 
         <el-col :span="1">
@@ -60,32 +60,32 @@
       <el-row>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'home' }" @click="drawer = false">01 : Home</RouterLink>
+            <RouterLink :to="{ name: 'home' }" @click="drawer = false">{{ $t('navbar.Home') }}</RouterLink>
           </div>
         </el-col>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'bloglist' }" @click="drawer = false">02 : Blogs</RouterLink>
+            <RouterLink :to="{ name: 'bloglist' }" @click="drawer = false">{{ $t('navbar.Blogs') }}</RouterLink>
           </div>
         </el-col>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'vloglist' }" @click="drawer = false">03 : Vlogs</RouterLink>
+            <RouterLink :to="{ name: 'vloglist' }" @click="drawer = false">{{ $t('navbar.Vlogs') }}</RouterLink>
           </div>
         </el-col>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'about' }" @click="drawer = false">04 : About me</RouterLink>
+            <RouterLink :to="{ name: 'about' }" @click="drawer = false">{{ $t('navbar.About') }}</RouterLink>
           </div>
         </el-col>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'works' }" @click="drawer = false">05 : Works</RouterLink>
+            <RouterLink :to="{ name: 'works' }" @click="drawer = false">{{ $t('navbar.Works') }}</RouterLink>
           </div>
         </el-col>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'contact' }" @click="drawer = false">06 : Contact</RouterLink>
+            <RouterLink :to="{ name: 'contact' }" @click="drawer = false">{{ $t('navbar.Contact') }}</RouterLink>
           </div>
         </el-col>
       </el-row>
@@ -93,18 +93,18 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { portfoliosList } from '@/utils/config'
+// import { portfoliosList } from '@/utils/config'
 defineProps(['isHome'])
 const drawer = ref(false)
 const route = useRoute()
 const currentRoute = computed(() => route.name)
-const workPages = computed(() => 'works,' + portfoliosList.map(v => v.routeName).join(','))
+// const workPages = computed(() => 'works,' + portfoliosList.map(v => v.routeName).join(','))
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .moble_menu{
   margin: 10px;
 }

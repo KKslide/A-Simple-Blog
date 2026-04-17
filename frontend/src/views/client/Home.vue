@@ -1,7 +1,6 @@
 <template>
   <div>
     <div id="logo_bg"></div>
-
     <el-row class="typing_hello_world">
       <el-col :span="18" :offset="3">
         <!-- typing文字 -->
@@ -20,21 +19,21 @@
         </div>
       </el-col>
     </el-row>
-
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { useLangStore } from '@/stores/langStore'
 import Typed from 'typed.js'
-import clientApi from '@/api/client/index'
+import { useLangStore } from '@/stores/langStore'
 
 defineOptions({
-  name: 'HomePage',
+  name: "HomePage"
 })
 
-let handleMouseMove, typer;
+let typer: Typed | null = null
+let handleMouseMove: ((event: MouseEvent) => void) | null = null
+const langStore = useLangStore()
 const typerConfig = ref({
   stringsElement: '#typed-strings',
   typeSpeed: 100,
@@ -42,27 +41,19 @@ const typerConfig = ref({
   loop: true,
   loopCount: Infinity,
 })
-const langStore = useLangStore()
-onMounted(() => {
-  typer = type()
-  setMouseEffect()
-  /* ******************** */
-  // sendVisit()
-})
-onBeforeUnmount(() => {
-  document.body.removeEventListener('mousemove', handleMouseMove);
-  typer.destroy()
-})
-// async function sendVisit () {
-//   return await clientApi.visit()
-// }
-function setMouseEffect() {
+
+const type = () => {
+  typer =  new Typed('#typed', typerConfig.value);
+}
+
+// 鼠标移动动画
+const setMouseEffect = () => {
   const body = document.body;
   const bg = document.getElementById('logo_bg');
   const windowWidth = window.innerWidth / 5;
   const windowHeight = window.innerHeight / 5;
 
-  handleMouseMove = (e) => {
+  handleMouseMove = (e: MouseEvent) => {
     const mouseX = e.clientX / windowWidth;
     const mouseY = e.clientY / windowHeight;
     if (bg) {
@@ -72,17 +63,28 @@ function setMouseEffect() {
 
   body.addEventListener('mousemove', handleMouseMove);
 }
-function type () {
-  return new Typed('#typed', typerConfig.value);
-}
+
+onMounted(() => {
+  type()
+  setMouseEffect()
+})
+
+onBeforeUnmount(() => {
+  if (handleMouseMove) {
+    document.body.removeEventListener('mousemove', handleMouseMove);
+  }
+  typer?.destroy()
+})
+
 watch(
   () => langStore.currentLang,
   async () => {
-    typer.destroy()
+    typer?.destroy()
     await nextTick()
-    typer = type()
+    type()
   }
 )
+
 </script>
 
 <style lang="scss" scoped>
@@ -94,6 +96,7 @@ watch(
   top: 0;
   z-index: -1;
   // background-image: url("@/assets/img/kk-mirror.jpeg");
+  // background-image: url("@/assets/img/dune-poster.png");
   background-image: url("@/assets/img/gemini_space.png");
   background-size: cover;
   background-repeat: no-repeat;

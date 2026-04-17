@@ -60,14 +60,14 @@
                       <el-icon size="14">
                         <Clock />
                       </el-icon>
-                      <span>{{ new Date(sub_item.created_at).Format('yyyy-MM-dd') }}</span>
+                      <span>{{ dayjs(sub_item.created_at).format('YYYY-MM-DD') }}</span>
                     </div>
                     <span class="split"></span>
                     <div class="info_icon category">
                       <el-icon size="14">
                         <CollectionTag />
                       </el-icon>
-                      <span>{{ sub_item.cate_name || sub_item.category }}</span>
+                      <span>{{ sub_item.category }}</span>
                     </div>
                   </div>
                   <div class="b_i_c_desc">
@@ -81,10 +81,10 @@
                 </div>
               </div>
             </el-col>
-            <div v-if="!blogList?.[item]?.length" class="text-center">
+            <div v-if="!blogList[item]?.length" class="text-center">
               {{ texts.noDataText }}
             </div>
-            <div v-show="!activeId && !isSearchPage && blogList[item].length" class="blog_category_check" @click="checkCategory(categoryList.find(v=>v.name==item))">
+            <div v-show="!activeId && !isSearchPage && blogList[item]?.length" class="blog_category_check" @click="checkCategory(categoryList.find(v=>v.name==item))">
               {{ texts.checkMore }}「{{ item }}」
             </div>
           </el-col>
@@ -101,11 +101,20 @@
         <div class="category_content">
           <div class="c_c_title">{{ texts.categoryTitle }}</div>
           <div class="c_c_list">
-            <div :class="['c_c_item', { 'active': !activeId && !isSearchPage }]"
-              @click="checkCategory">{{ texts.categoryAll }}</div>
-            <div :class="['c_c_item', { 'active': activeId == item.id && !isSearchPage }]" v-for="item in filtedCategoryList" :key="item.id"
-              @click="checkCategory(item)">{{ item.name }}</div>
-            <div :class="['c_c_item', { 'active': isSearchPage }]" @click="searchDialogVisible=true">
+            <div
+              :class="['c_c_item', { 'active': !activeId && !isSearchPage }]"
+              @click="checkCategory()"
+            >{{ texts.categoryAll }}</div>
+            <div
+              v-for="item in filtedCategoryList"
+              :key="item.id"
+              :class="['c_c_item', { 'active': activeId == item.id && !isSearchPage }]"
+              @click="checkCategory(item)"
+            >{{ item.name }}</div>
+            <div
+              :class="['c_c_item', { 'active': isSearchPage }]"
+              @click="searchDialogVisible = true"
+            >
               <el-icon><Search /></el-icon>
               {{ texts.search }}
             </div>
@@ -123,7 +132,7 @@
       width="500"
       :before-close="searchCancelHandler"
     >
-      <el-form :model="searchForm" @submit.native.prevent  @keyup.enter.native="searchHandler">
+      <el-form :model="searchForm" @submit.prevent  @keyup.enter="searchHandler">
         <el-form-item :label="texts.searchKeyword" label-width="80">
           <el-input v-model="searchForm.keyword" autocomplete="off" />
         </el-form-item>
@@ -151,17 +160,23 @@
 
 </template>
 
-<script setup>
-defineOptions({ name: 'bloglist' })
+<script setup lang="ts">
+defineOptions({ name: 'BlogListPage' })
 import { ref, reactive, onMounted, computed, watch, onActivated, onDeactivated, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { storeToRefs } from 'pinia'
+import { dayjs } from '@/config/config'
+import type { CarouselInstance } from 'element-plus'
+import type {
+  CategoryItemConfig,
+  BlogItemConfig
+} from '@/interfaces/index'
 import { usePageStore } from '@/stores/pageStore'
 import ClientAPI from '@/api/client/index'
 import Sticker from './Widgets/Sticker.vue'
 const activeIndex = ref(0)
-const carouselRef = ref(null)
+const carouselRef = ref<CarouselInstance | null>(null)
 const BaseUrl = import.meta.env.VITE_MEDIA_URL
 const pageStore = usePageStore()
 const { blogList, catList: categoryList } = storeToRefs(pageStore)
@@ -202,7 +217,7 @@ const blogListKey = computed(() => {
 // 如果点击了某个分类 或者搜索文章, 就全量展示, 否则每组分类只显示3条数据
 const blogListSliceNum = computed(() => {
   if (isSearchPage.value) {
-    return blogList.value['Search'].length
+    return blogList.value['Search']?.length ?? 0
   }
   return blogList.value[currentCate.value]?.length || 3
 })
@@ -213,11 +228,26 @@ const searchDialogVisible = ref(false)
 const searchForm = reactive({ keyword: '', category_id: 0 })
 const router = useRouter()
 const route = useRoute()
+// const currentCate = computed(() => {
+//   // 从 categoryList 列表中查询 有无当前activeId的元素
+//   const _curCate = () => categoryList.value.find(v => v.id == activeId.value)
+//   // 先判断有无activeId, 再决定要不要find
+//   return !activeId.value ? '' : (route.params.catename || _curCate()?.name)
+// })
 const currentCate = computed(() => {
-  // 从 categoryList 列表中查询 有无当前activeId的元素
-  const _curCate = () => categoryList.value.find(v => v.id == activeId.value)
-  // 先判断有无activeId, 再决定要不要find
-  return !activeId.value ? '' : (route.params.catename || _curCate()?.name)
+  if (!activeId.value) return ''
+
+  const fromRoute = route.params.catename
+  if (typeof fromRoute === 'string') {
+    return fromRoute
+  }
+  if (Array.isArray(fromRoute)) {
+    // 如果是数组, 挑第一个或自行决定逻辑
+    return fromRoute[0] ?? ''
+  }
+
+  const byId = categoryList.value.find(v => v.id == activeId.value)
+  return byId?.name ?? ''
 })
 const isEmptyList = computed(() => {
   if (isSearchPage.value && blogList.value['Search']?.length == 0) return true
@@ -227,12 +257,14 @@ const isEmptyList = computed(() => {
   const blogListKey = isSearchPage.value ? 'Search' : currentCate.value
   return !blogList.value[blogListKey]?.length
 })
-function checkContent (id) {
+function checkContent (id: number) {
   router.push(`/content/${id}`)
 }
 // 点击切换分类
-function checkCategory (cate) {
-  const { id, name } = cate
+function checkCategory (cate?: CategoryItemConfig | null) {
+  // const { id, name } = cate
+  const id = cate?.id ?? 0
+  const name = cate?.name ?? ''
   activeId.value = id
   const _router = !id ? `/bloglist` : `/bloglist/${name}`
   router.push(_router)
@@ -274,11 +306,14 @@ function searchHandler () {
       // 在这里为bloglist新造一个key,名为Search
       pageStore.addSearchResultToList(res)
     })
+    .catch(err => {
+      console.log(err)
+    })
 }
-function handleChange(newIndex) {
+function handleChange(newIndex: number) {
   activeIndex.value = newIndex
 }
-function handleItemClick(id, index) {
+function handleItemClick(id:number, index:number) {
   if (index === activeIndex.value) {
     checkContent(id)
   }
@@ -298,8 +333,8 @@ onDeactivated(() => {
 })
 watch(
   () => pageStore.blogList,
-  val => {
-    if (val && !Object.keys(val).length) {
+  (val: Record<string, BlogItemConfig[]>) => {
+    if (!Object.keys(val).length) {
       getList()
     }
   },
