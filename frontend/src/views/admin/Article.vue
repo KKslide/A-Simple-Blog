@@ -67,14 +67,14 @@
     </el-table>
 
     <br>
-    <el-button type="default" :text="true" bg @click='drawerType="add";openEditor()'>添加文章</el-button>
+    <el-button type="info" :text="true" bg @click='drawerType="add";openEditor()'>添加文章</el-button>
 
     <el-divider></el-divider>
     <el-pagination
       v-if="articleData.length"
       background
       layout="prev, pager, next"
-      :page-size="5"
+      :page-size="pageSize"
       :page-count="pages"
       :total="total"
       @current-change="pageChange"
@@ -100,7 +100,7 @@
           <!-- 文章分类 -->
           <el-form-item label="文章分类"  prop="category_id" class="item_category">
             <el-select v-model="articleFrom.category_id" placeholder="请选文章分类">
-              <el-option v-for="(v,i) in categoryData" :key="v.id" :label="v.name" :value="'' +v.id" ></el-option>
+              <el-option v-for="(v,i) in categoryData" :key="v.id" :label="v.name" :value="v.id" ></el-option>
             </el-select>
           </el-form-item>
           <!-- 是否显示 -->
@@ -138,7 +138,7 @@
             <el-input v-model="articleFrom.description" autocomplete="off"></el-input>
           </el-form-item>
           <!-- 视频链接 -->
-          <el-form-item v-if="articleFrom.category_id==34" label="视频链接" prop="video_url">
+          <el-form-item v-if="isVlogType" label="视频链接" prop="video_url">
             <el-input v-model="articleFrom.video_url" autocomplete="off"></el-input>
           </el-form-item>
           <!-- 文章封面图 -->
@@ -155,7 +155,7 @@
               <template #default>
                 <img
                   v-if="articleFrom.cover_url"
-                  :src="BaseUrl + articleFrom.cover_url"
+                  :src="articleFrom.cover_url.startsWith('http') ? articleFrom.cover_url : BaseUrl + articleFrom.cover_url"
                   style="width:146px;height:94px;border-radius:5px;object-fit:cover;"
                 />
                 <div v-else>
@@ -317,9 +317,24 @@ const drawerTitle = computed(() => {
 })
 const drawerType = ref('add')
 const drawerVisible = ref(false)
+const isVlogType = computed(() => {
+  return categoryData.value.find(v => v.id == articleFrom.category_id)?.name == 'Vlog'
+})
 /* ***************************** */
 const showComment = ref(false)
 const curComment = ref({})
+/** 表格数据刚写入时 el-switch 可能误触发 change，此期间不调用保存接口 */
+const ignoreTableSwitchChange = ref(false)
+
+function normalizeArticleRow(row) {
+  const toSwitch = (v) => (v === 1 || v === '1' || v === true ? '1' : '0')
+  return {
+    ...row,
+    is_pinned: toSwitch(row.is_pinned),
+    is_published: toSwitch(row.is_published),
+  }
+}
+
 function checkComment(row) {
   ServerAPI.getArticleComment({ id: row.id })
     .then(res => {
@@ -347,8 +362,8 @@ async function edit(row) {
   editorRef.value.setHtml(row.content)
 }
 async function toggleSomeKey(row) {
-  Object.assign(articleFrom, row)
-  const res = await ServerAPI.editArticle(articleFrom)
+  if (ignoreTableSwitchChange.value) return
+  const res = await ServerAPI.editArticle({ ...row })
   if (res.code == 1) {
     ElMessage.success('修改成功✌️')
   }
@@ -384,13 +399,19 @@ function uploadHandler (file) {
     })
 }
 async function getArticleData() {
-  const params = { pageNo: curPage.value, pageSize: pageSize.value }
-  await ServerAPI.getArticleList(params)
-    .then(res => {
-      total.value = res.data[0]?.total || 0 // 总共的数量
-      pages.value = Math.floor(total.value/5)
-      articleData.value = res.data
+  ignoreTableSwitchChange.value = true
+  try {
+    const params = { pageNo: curPage.value, pageSize: pageSize.value }
+    await ServerAPI.getArticleList(params).then((res) => {
+      const rows = Array.isArray(res.data) ? res.data : []
+      total.value = rows[0]?.total || 0
+      pages.value = Math.ceil(total.value / pageSize.value)
+      articleData.value = rows.map(normalizeArticleRow)
     })
+    await nextTick()
+  } finally {
+    ignoreTableSwitchChange.value = false
+  }
 }
 async function getCateData() {
   await ServerAPI.getCategoryList()

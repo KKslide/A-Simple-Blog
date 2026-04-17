@@ -23,7 +23,7 @@
               >
                 <el-carousel-item v-for="(item, index) in blogList['TOP']" :key="item.id" >
                   <div class="top_content" @click="handleItemClick(item.id, index)">
-                    <el-image :src="BaseUrl + item.cover_url" fit="cover" style="width: 100%; height: 100%;"></el-image>
+                    <el-image :src="item.cover_url.startsWith('http') ? item.cover_url : BaseUrl + item.cover_url" fit="cover" style="width: 100%; height: 100%;"></el-image>
                     <h4 class="top_title">{{ item.title }} >></h4>
                   </div>
                 </el-carousel-item>
@@ -74,7 +74,7 @@
                     <p>{{ sub_item.description }}</p>
                   </div>
                   <div class="b_i_c_img" @click="checkContent(sub_item.id)">
-                    <el-image :src="BaseUrl + sub_item.cover_url" fit="cover" style="width: 100%; height: 250px;"></el-image>
+                    <el-image :src="sub_item.cover_url.startsWith('http') ? sub_item.cover_url : BaseUrl + sub_item.cover_url" fit="cover" style="width: 100%; height: 250px;"></el-image>
                   </div>
                   <div class="b_i_c_read" @click="checkContent(sub_item.id)">{{ texts.readText }} >></div>
                   <el-divider />
@@ -195,7 +195,7 @@ const blogListKey = computed(() => {
   // 如果是search页面, 造一个 'Search' 的key
   if (isSearchPage.value) return ['Search']
   // bloglist 页面, 过滤掉 Vlog 类型的数据
-  const _filtedData = Object.keys(blogList.value).filter(v => v != 'Vlog' && v != 'Search' && v != 'TOP')
+  const _filtedData = Object.keys(blogList.value).filter(v => v != 'Vlog' && v != 'Search' && v != 'TOP' && blogList.value[v]?.length > 0)
   // 如果点击过了某个分类, 将结构改成一个只有元素的数组, 这个元素是 分类列表下的某个单独分类
   return activeId.value ? [currentCate.value] : _filtedData
 })

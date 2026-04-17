@@ -65,11 +65,19 @@ module.exports.getDashboard = (req, res) => {
 /* *********************分类管理********************* */
 /* 分类-获取 */
 module.exports.getCategory = (req, res) => {
+  const pageNo = Number(req.body.pageNo ?? req.query.pageNo ?? 1);
+  const pageSize = Number(req.body.pageSize ?? req.query.pageSize ?? 10);
+  const hasPagination =
+    req.body.pageNo != null ||
+    req.query.pageNo != null ||
+    req.body.pageSize != null ||
+    req.query.pageSize != null;
   var opt = {
     table: "category",
-    pageNo: req.body.pageNo || 1,
-    pageSize: req.body.pageSize || 10,
-    type: req.body.serchType || null,
+    pageNo,
+    pageSize,
+    // 默认返回全部分类，避免无分页参数时被后端默认 limit 截断
+    type: hasPagination ? req.body.serchType || req.query.serchType || null : "all",
     order: "sort_order",
   };
   dbMoudle.doQuery(opt, (err, data) => {
@@ -122,11 +130,13 @@ module.exports.editCategory = (req, res) => {
 /* *********************文章管理********************* */
 /* 文章-获取 */
 module.exports.getArticle = (req, res) => {
+  const pageNo = Number(req.body.pageNo ?? req.query.pageNo ?? 1);
+  const pageSize = Number(req.body.pageSize ?? req.query.pageSize ?? 10);
   var opt = {
     table: "article",
     type: "articles",
-    pageNo: req.body.pageNo || req.query.pageNo || 0,
-    pageSize: req.body.pageSize || req.query.pageSize || 10,
+    pageNo: pageNo > 0 ? pageNo : 1,
+    pageSize: pageSize > 0 ? pageSize : 10,
   };
   dbMoudle.doQuery(opt, (err, data) => {
     res.json({ data });
@@ -218,10 +228,12 @@ module.exports.getMessages = (req, res) => {
   });
 };
 module.exports.adminGetMessages = (req, res) => {
+  const pageNo = Number(req.body.pageNo ?? req.query.pageNo ?? 1);
+  const pageSize = Number(req.body.pageSize ?? req.query.pageSize ?? 10);
   const opt = {
     table: "messages",
-    pageNo: req.body.pageNo || req.query.pageNo || 1,
-    pageSize: req.body.pageSize || req.query.pageSize || 10,
+    pageNo: pageNo > 0 ? pageNo : 1,
+    pageSize: pageSize > 0 ? pageSize : 10,
   };
   dbMoudle.queryMessageList(opt, result => {
     res.json(result)

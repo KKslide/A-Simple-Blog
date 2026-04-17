@@ -34,7 +34,7 @@
       v-if="msgList.length"
       background
       layout="prev, pager, next"
-      :page-size="5"
+      :page-size="pageSize"
       :page-count="pages"
       :total="total"
       @current-change="pageChange"
@@ -68,7 +68,10 @@ function getMessageList() {
       pages.value = res.pages
     })
 }
-function pageChange() {}
+function pageChange(currentPage) {
+  curPage.value = currentPage
+  getMessageList()
+}
 onMounted(() => {
   getMessageList()
 })

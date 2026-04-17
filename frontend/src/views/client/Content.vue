@@ -4,7 +4,7 @@
       <el-col :span="16" :offset="4" :xs="{span:24, offset:0}">
         <div id="content_banner">
           <span style="display: none;">{{ BaseUrl + contentObj.cover_url }}</span>
-          <el-image :src="BaseUrl + contentObj.cover_url" style="width: 100%; height: 120px;" fit="contain"></el-image>
+          <el-image :src="categoryBannerUrl" style="width: 100%; height: 120px;" fit="contain"></el-image>
         </div>
         <PageTitle :title="contentObj.title" />
         <div class="content_info">
@@ -33,8 +33,8 @@
         <!-- 视频部分 -->
         <div class="plyr-wrapper" v-if="contentObj.category == 'Vlog' && showPlayer">
           <vue-plyr>
-            <video :key="contentObj.video_url" controls crossorigin playsinline :poster="BaseUrl + contentObj.cover_url">
-              <source :src="BaseUrl + contentObj.video_url" type="video/mp4" />
+            <video :key="contentObj.video_url" controls crossorigin playsinline :poster="contentObj.cover_url.startsWith('http') ? contentObj.cover_url : BaseUrl + contentObj.cover_url">
+              <source :src="vlogVideoUrl" type="video/mp4" />
             </video>
           </vue-plyr>
         </div>
@@ -147,6 +147,12 @@ const commentRules = reactive({
 })
 const contentRef = ref(null)
 const previewImgList = reactive([])
+const categoryBannerUrl = computed(() => {
+  return contentObj.value.category_banner_url?.startsWith('http') ? contentObj.value.category_banner_url : BaseUrl + contentObj.value.category_banner_url
+})
+const vlogVideoUrl = computed(() => {
+  return contentObj.value.video_url?.startsWith('http') ? contentObj.value.video_url : BaseUrl + contentObj.value.video_url
+})
 function resetForm() {
   commentFormRef.value.resetFields()
 }

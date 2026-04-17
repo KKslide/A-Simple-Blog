@@ -395,6 +395,7 @@ module.exports.getContentDetail = async function (options, callback) {
               a.title,
               a.category_id AS category_id,
               c.name AS category,
+              c.banner_url AS category_banner_url,
               a.content,
               a.description,
               a.created_at,

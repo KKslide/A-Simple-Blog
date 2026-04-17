@@ -1,9 +1,9 @@
 import 'normalize.css'
-import './styles/main.scss'
 import 'element-plus/dist/index.css'
 import 'element-plus/theme-chalk/display.css'
 import 'element-plus/theme-chalk/dark/css-vars.css' // 暗黑模式
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
+import './styles/main.scss'
 
 import 'vue-plyr/dist/vue-plyr.css'
 import { plyrOptions } from '@/utils/config'
