@@ -81,7 +81,7 @@
                 </div>
               </div>
             </el-col>
-            <div v-if="!blogList[item].length" class="text-center">
+            <div v-if="!blogList?.[item]?.length" class="text-center">
               {{ texts.noDataText }}
             </div>
             <div v-show="!activeId && !isSearchPage && blogList[item].length" class="blog_category_check" @click="checkCategory(categoryList.find(v=>v.name==item))">
