@@ -63,20 +63,6 @@ export interface MessageItem {
   [key: string]: unknown
 }
 
-export interface WorkItem {
-  id: number
-  title: string
-  category: number
-  category_name: string
-  description: string
-  link: string
-  cover: string
-  is_show: string
-  addtime: string
-  total?: number
-  [key: string]: unknown
-}
-
 export interface DashboardTagItem {
   tag: string
   value: number

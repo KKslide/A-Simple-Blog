@@ -37,12 +37,6 @@ const serverRoutes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/Message.vue'),
         meta: { title: '留言管理' }
       },
-      {
-        path: 'work',
-        name: 'work',
-        component: () => import('@/views/admin/Work.vue'),
-        meta: { title: '作品管理' }
-      }
     ]
   },
   {

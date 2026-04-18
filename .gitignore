@@ -36,7 +36,7 @@ coverage
 /backend/build/
 /backend/dist/
 
-# Backend uploads (keep folder but ignore contents)
+# Backend uploads (不要upload)
 /backend/upload/**
 
 # Cypress e2e

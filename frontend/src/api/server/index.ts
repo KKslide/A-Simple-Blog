@@ -6,7 +6,6 @@ import type {
   CategoryItem,
   CommentItem,
   MessageItem,
-  WorkItem,
   DashboardData,
   LoginResponse
 } from "@/types/api";
@@ -77,19 +76,6 @@ class ServerAPI extends ApiHelper {
     return this.post<{ code: number; msg?: string }, Record<string, unknown>>('/admin/info/edit', data)
   }
 
-  // 作品管理
-  getWorkList(params: Record<string, unknown> = {}) {
-    return this.get<ApiResponse<WorkItem[]>>('/admin/works', params)
-  }
-  addWork(data: FormData | Record<string, unknown>) {
-    return this.post<{ code: number; msg?: string }, FormData | Record<string, unknown>>('/admin/works/add', data)
-  }
-  editWork(data: FormData | Record<string, unknown>) {
-    return this.post<{ code: number; msg?: string }, FormData | Record<string, unknown>>('/admin/works/edit', data)
-  }
-  delWork(data: Record<string, unknown>) {
-    return this.post<{ code: number; msg?: string }, Record<string, unknown>>('/admin/works/del', data)
-  }
 }
 
 export default new ServerAPI();
