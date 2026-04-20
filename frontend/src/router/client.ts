@@ -105,6 +105,11 @@ export const clientRoutes = [
             path: 'snake',
             name: 'snake',
             component: () => import('@/views/client/Portfolio/Snake.vue')
+          },
+          {
+            path: 'someEffects',
+            name: 'someEffects',
+            component: () => import('@/views/client/Portfolio/SomeEffects.vue')
           }
         ],
       },

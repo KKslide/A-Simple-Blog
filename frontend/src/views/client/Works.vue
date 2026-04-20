@@ -10,7 +10,7 @@
         <p>一个Echarts+百度地图应用</p>
       </template>
     </Card>
-    <Card v-for="item in list" :key="item.name" :data-image="BaseUrl + item.img" @click="check(item.routeName)">
+    <Card v-for="item in list" :key="item.name" :data-image="item.img.startsWith('http') ? item.img : BaseUrl + item.img" @click="check(item.routeName)">
       <template #header>
         <h1>{{ item.name }}</h1>
       </template>

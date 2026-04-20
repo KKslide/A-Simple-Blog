@@ -129,6 +129,12 @@ const portfoliosList = [
     img: '/upload/snake_html.jpeg',
     description: '每个前端er都要会写的贪吃蛇😂',
     routeName: 'snake'
+  },
+  {
+    name: 'Some Effects',
+    img: '/upload/process_bar.jpeg',
+    description: 'Some effects',
+    routeName: 'someEffects'
   }
 ]
 
