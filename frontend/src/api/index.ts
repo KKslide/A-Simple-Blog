@@ -24,7 +24,10 @@ export default class Request {
   service: AxiosInstance;
   constructor() {
     this.service = axios.create({
-      baseURL: import.meta.env.DEV ? '' : (import.meta.env.VITE_API_URL as string),
+      // 生产构建默认同源 /api; 开发走 Vite 代理, baseURL 留空
+      baseURL: import.meta.env.DEV
+        ? ''
+        : ((import.meta.env.VITE_API_URL as string) || '/api'),
       timeout: 60000,
       headers: {
         'Content-Type': 'application/json'

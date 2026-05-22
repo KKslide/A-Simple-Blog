@@ -1,489 +1,103 @@
-// @ts-nocheck
-const connection = require("../db/index"); // 数据库连接配置
-const utils = require("../util/util");
-
 /**
- * CRUD
+ * @deprecated 请直接使用 repositories/ 与 services/。
+ * 保留为薄封装，便于迁移期兼容旧引用。
  */
-/* 查询 */
-module.exports.doQuery = (options, callback) => {
-  let table = options.table; // 要查询的表格
-  let pageNo = options.pageNo; // 页码
-  let pageSize = options.pageSize; // 页容量
-  let searchType = options.type; // 条件- 是否全量查询
-  let order = options.order; // 按照什么字段排序
-  let sql = ``;
-  switch (searchType) {
-    case "all": // 0- 普通全量查询(多用于前端)
-      sql += `SELECT * FROM ${table} where is_del='0'`;
-      break;
-    case "articles": // 1- 文章管理端的查询
-      sql += `
-          select 
-          (select count(*) from article) total,
-          count(cm.article_id) comment_num,
-          cate.name as cate_name,
-          a.* 
-          from article a 
-          left join category cate on a.category_id = cate.id
-          left join comment cm on a.id=cm.article_id 
-          and cm.is_del='0'
-          where a.is_del='0'
-          group by a.id 
-          order by a.created_at desc 
-          limit ${(pageNo - 1) * pageSize},${pageSize}`;
-      break;
-    default: // 2- 常规查询
-      sql += `
-        SELECT * FROM ${table} 
-        where is_del='0' 
-        ${order? 'order by ' + order + ' desc' : ''}
-        limit ${(pageNo - 1) * pageSize},${pageSize}
-      `;
-      break;
-  }
-  connection.query(sql, (err, data) => {
-    if (err) {
-      console.log(err);
-      callback(null, err);
-    } else {
-      callback(null, data);
-    }
-  });
-};
-/* 新增 */
-module.exports.doAdd = (options, callback) => {
-  let table = options.table;
-  let keys = Object.keys(options.data);
-  let values = Object.values(options.data);
-  let placeholders = keys.map(() => "?").join(", ");
-  let sql = `insert into ${table} (${keys.join(", ")}) values (${placeholders}) `;
-  connection.query(sql, values, (err, res) => {
-    if (res.affectedRows == 1) {
-      callback();
-    } else {
-      callback(err);
-    }
-  });
-};
-/* 删除 */
-module.exports.doDel = (options, callback) => {
-  let id = options.id;
-  let table = options.table;
-  let sql = `update ${table} set is_del='1' where id = ${id}`;
-  connection.query(sql, (err, res) => {
-    if (res.affectedRows == 1) {
-      callback();
-    } else {
-      callback(err);
-    }
-  });
-};
-/* 修改 */
-module.exports.doEdit = (options, callback) => {
-  const table = options.table;
-  const id = options.id;
-  const data = options.data;
+const base = require("./repositories/baseRepository");
+const userRepo = require("./repositories/userRepository");
+const articleRepo = require("./repositories/articleRepository");
+const commentRepo = require("./repositories/commentRepository");
+const messageRepo = require("./repositories/messageRepository");
+const dashboardService = require("./services/dashboardService");
+const indexPageService = require("./services/indexPageService");
+const contentService = require("./services/contentService");
 
-  const keys = Object.keys(data); // ['title', 'content', ...]
-  const values = Object.values(data); // ['xxx', 'yyy', ...]
-  const setStr = keys.map((key) => `${key} = ?`).join(", "); // title = ?, content = ? ...
-
-  const sql = `UPDATE ${table} SET ${setStr} WHERE id = ?`;
-  values.push(id); // 添加到 values 末尾，匹配 WHERE id = ?
-
-  connection.query(sql, values, (err, res) => {
-    if (err) {
-      console.error(err);
-      return callback(err);
-    }
-    if (res.affectedRows === 1) {
-      callback(null, res); // 可返回更新结果
-    } else {
-      callback(new Error("Update failed"));
-    }
-  });
-};
-/* 登陆查询 */
-module.exports.loginQuery = async (options, callback) => {
-  const sql = `SELECT id, username, is_admin FROM users WHERE username = ? AND password = ?`;
-  const values = [options.username, options.password];
-  try {
-    const data = await connection.queryAsync(sql, values);
-    callback(null, data);
-  } catch (err) {
-    console.error("err ==>>>", err);
-    console.log(err);
-  }
-};
-
-/**
- * 后台管理页一些复杂查询↓
- */
-/* 管理页首页数据 */
-module.exports.getDashboardData = async function (callback) {
-  try {
-    // --- tags ---
-    const statsSql = `
-      SELECT
-          (SELECT COUNT(*) FROM visitors) AS visitTotal,
-          (SELECT COUNT(*) FROM visitors WHERE DATE(visited_at) = CURDATE()) AS visitToday,
-          (SELECT COUNT(*) FROM users) AS userNum,
-          COUNT(a.id) AS arcticleNum,
-          COUNT(CASE WHEN c.name = 'Fun' THEN 1 ELSE NULL END) AS Fun,
-          COUNT(CASE WHEN c.name = 'Blog' THEN 1 ELSE NULL END) AS Blog,
-          COUNT(CASE WHEN c.name = 'Vlog' THEN 1 ELSE NULL END) AS Vlog,
-          COUNT(CASE WHEN c.name = 'Code' THEN 1 ELSE NULL END) AS Code,
-          COUNT(CASE WHEN c.name = 'Other' THEN 1 ELSE NULL END) AS Other
-      FROM 
-          article a
-      LEFT JOIN 
-          category c ON a.category_id = c.id;
-    `;
-    // --- 24小时访问量 ---
-    const timelineSql = `
-      SELECT 
-          HOUR(visited_at) AS hour, 
-          COUNT(*) AS count 
-      FROM 
-          visitors 
-      WHERE 
-          visited_at >= NOW() - INTERVAL 24 HOUR 
-      GROUP BY 
-          hour;
-    `;
-
-    // --- 并行执行两个查询 ---
-    const [statsResult, timelineResult] = await Promise.all([connection.queryAsync(statsSql), connection.queryAsync(timelineSql)]);
-
-    // --- 处理第一个查询的结果 ---
-    const stats = statsResult[0];
-    const resData = {
-      tag_list: [
-        { tag: "总访问量", value: stats.visitTotal },
-        { tag: "今日访问量", value: stats.visitToday },
-        { tag: "用户", value: stats.userNum },
-        { tag: "文章数", value: stats.arcticleNum },
-      ],
-      pie_chart_data: [
-        { name: "Fun", value: stats.Fun },
-        { name: "Blog", value: stats.Blog },
-        { name: "Vlog", value: stats.Vlog },
-        { name: "Code", value: stats.Code },
-        { name: "Other", value: stats.Other },
-      ],
+module.exports = {
+  doQuery(options, callback) {
+    const { table, pageNo, pageSize, type, order } = options;
+    const run = async () => {
+      if (type === "all") return base.findAllActive(table);
+      if (type === "articles") return articleRepo.listAdmin({ pageNo, pageSize });
+      return base.findPageActive(table, { pageNo, pageSize, orderColumn: order });
     };
+    run()
+      .then((data) => callback(null, data))
+      .catch((err) => callback(null, err));
+  },
 
-    // --- 处理第二个查询的结果 (折线图数据) ---
+  doAdd(options, callback) {
+    base
+      .insert(options.table, options.data)
+      .then(() => callback())
+      .catch((err) => callback(err));
+  },
 
-    // 1. 创建一个包含过去24小时所有小时的模板，默认值为0
-    const lineChartDataMap = new Map();
-    const currentHour = new Date().getHours();
-    for (let i = 0; i < 24; i++) {
-      const hour = (currentHour - i + 24) % 24; // 计算过去的小时，例如当前10点，1小时前是9点，11小时前是23点
-      const formattedHour = hour < 10 ? "0" + hour : hour.toString();
-      lineChartDataMap.set(hour, { time: formattedHour, value: 0 });
-    }
+  doDel(options, callback) {
+    base
+      .softDelete(options.table, options.id)
+      .then(() => callback())
+      .catch((err) => callback(err));
+  },
 
-    // 2. 用从数据库查出的真实数据填充模板
-    for (const row of timelineResult) {
-      if (lineChartDataMap.has(row.hour)) {
-        lineChartDataMap.get(row.hour).value = row.count;
-      }
-    }
+  doEdit(options, callback) {
+    const { table, id, data } = options;
+    const run =
+      table === "users" && data.password
+        ? userRepo.updateUser(id, data)
+        : base.updateById(table, id, data);
+    run
+      .then((res) => callback(null, res))
+      .catch((err) => callback(err));
+  },
 
-    // 3. 将 Map 转换为数组并按时间倒序
-    resData.line_chart_data = Array.from(lineChartDataMap.values()).reverse();
+  loginQuery(options, callback) {
+    userRepo
+      .authenticate(options.username, options.password)
+      .then((user) => callback(null, user ? [user] : []))
+      .catch((err) => callback(err));
+  },
 
-    // --- 通过回调返回最终结果 ---
-    callback(resData);
-  } catch (err) {
-    console.error("Failed to get dashboard data:", err);
-    callback(err, null);
-  }
-};
-/* 文章评论管理查询 */
-module.exports.queryCommentList = function (options, callback) {
-  let id = options.id;
-  let sql = ` select * from comment where article_id=${id} and is_del='0' `;
-  connection.query(sql, (err, data) => {
-    if (err) {
-      console.log(err);
-      callback(null, err);
-    } else {
-      callback(null, data);
-    }
-  });
-};
-/* 留言管理- 留言数量总数 */
-module.exports.queryMessageList = async (options, callback) => {
-  const countSQL = `select count(*) as 'count' from messages where is_del='0';`;
-  const countRes = await connection.queryAsync(countSQL);
-  const { count } = countRes[0]
-  this.doQuery(options, (err, data) => {
-    callback({
-      messages: data,
-      pages: Math.ceil(count / options.pageSize), // 页数长度
-      total: count,
-    })
-  })
-};
+  getDashboardData(callback) {
+    dashboardService
+      .getDashboardData()
+      .then((data) => callback(data))
+      .catch((err) => callback(err, null));
+  },
 
-/* ***************************************************** */
-/**
- * 前端页面
- */
-module.exports.getIndexPageData = async function (options, callback) {
-  try {
-    const categoryQuery =
-      "SELECT id, name, show_type, banner_url, sort_order FROM category WHERE is_del = '0' ORDER BY sort_order desc;";
-    // todo: 考虑是否删除掉 composition 和 其他多余字段的返回
-    const articleQuery = `
-      WITH RankedArticles AS (
-          SELECT
-              a.id, a.title, cat.name AS category, a.description, a.created_at,
-              a.view_count, a.cover_url, a.is_pinned, cat.sort_order, -- a.content, a.video_url, a.is_published, a.is_del,
-              ROW_NUMBER() OVER(PARTITION BY a.category_id ORDER BY a.created_at DESC) AS rn
-          FROM article a
-          INNER JOIN category cat ON a.category_id = cat.id
-          WHERE a.is_del = '0' AND a.is_published = '1' AND cat.is_del = '0'
-      )
-      SELECT
-          ra.*, IFNULL(c.comment_num, 0) AS comment_num
-      FROM RankedArticles ra
-      LEFT JOIN
-          (SELECT article_id, COUNT(*) AS comment_num FROM comment WHERE is_del = '0' GROUP BY article_id) c 
-      ON ra.id = c.article_id
-      -- WHERE ra.rn <= 3
-      ORDER BY ra.sort_order, ra.created_at DESC;
-    `;
+  queryCommentList(options, callback) {
+    commentRepo
+      .findByArticleId(options.id)
+      .then((data) => callback(null, data))
+      .catch((err) => callback(null, err));
+  },
 
-    const catList = await connection.queryAsync(categoryQuery);
-    const articleList = await connection.queryAsync(articleQuery);
-    // 初始化 blogList 对象，将所有分类名作为key，value为空数组
-    // 这样可以确保即使某个分类下没有文章，前端也能收到该分类的空数组
-    const blogList = {'TOP':[]};
-    catList.forEach((cat) => {
-      blogList[cat.name] = [];
-    });
+  queryMessageList(options, callback) {
+    messageRepo
+      .listAdminPage(options)
+      .then((data) => callback(data))
+      .catch((err) => callback(err));
+  },
 
-    // 遍历查询到的文章列表，填充到 blogList 对象中
-    articleList.forEach((article) => {
-      // 从结果中删除不再需要的排名列 `rn`
-      delete article.rn;
+  getIndexPageData(_options, callback) {
+    indexPageService
+      .getIndexPageData()
+      .then((data) => callback(data))
+      .catch((err) => callback({ code: 500, message: err.message }));
+  },
 
-      // 因为SQL返回的结果中已经包含了category名称，可以直接使用
-      if (blogList[article.category]&&article.is_pinned=='0') {
-        blogList[article.category].push(article);
-      }
-      // 把置顶文章填入单独key中
-      if (article.is_pinned == '1') {
-        blogList['TOP'].push(article)
-      }
-    });
+  doSearch(req, callback) {
+    articleRepo
+      .searchPublished(req.body || req)
+      .then((data) => callback(data))
+      .catch((err) => callback({ error: "服务器内部错误", err }));
+  },
 
-    // 构造最终返回给前端的数据结构
-    const responseData = {
-      catList,
-      blogList,
-    };
-    callback(responseData);
-  } catch (error) {
-    console.error("获取首页数据时出错:", error);
-    callback({
-      code: 500,
-      message: "服务器内部错误",
-    });
-  }
-};
-
-/* 文章查询 */
-module.exports.doSearch = async function (options, callback) {
-  try {
-    let { keyword, starttime, endtime, category_id, pageNo, pageSize } = options.body;
-
-    // 处理参数
-    keyword = keyword && keyword.trim() !== "" ? keyword.trim() : null;
-    category_id = category_id && !isNaN(category_id) ? Number(category_id) : null;
-    starttime = starttime && starttime.trim() !== "" ? starttime.trim() : null;
-    endtime = endtime && endtime.trim() !== "" ? endtime.trim() : null;
-
-    // 分页参数
-    pageNo = pageNo && !isNaN(pageNo) ? Number(pageNo) : null;
-    pageSize = pageSize && !isNaN(pageSize) ? Number(pageSize) : null;
-
-    // 基础 SQL（不加 limit）
-    let sql = `
-      SELECT 
-        (SELECT COUNT(*) 
-         FROM article a2
-         LEFT JOIN category c2 ON a2.category_id = c2.id
-         WHERE a2.is_del='0'
-           AND a2.is_published='1'
-           AND c2.is_del='0'
-           ${category_id !== null ? " AND a2.category_id = ?" : ""}
-           ${keyword !== null ? ` AND (a2.title LIKE ? OR a2.description LIKE ?)` : ""}
-           ${starttime !== null ? " AND a2.created_at >= ?" : ""}
-           ${endtime !== null ? " AND a2.created_at <= ?" : ""}
-        ) AS total,
-        COUNT(cm.article_id) AS comment_num,
-        cate.name AS cate_name,
-        a.* 
-      FROM article a
-      LEFT JOIN category cate ON a.category_id = cate.id
-      LEFT JOIN comment cm ON a.id = cm.article_id AND cm.is_del = '0'
-      WHERE a.is_del = '0'
-        AND a.is_published='1'
-        AND cate.is_del = '0'
-        ${category_id !== null ? " AND a.category_id = ?" : ""}
-        ${keyword !== null ? ` AND (a.title LIKE ? OR a.description LIKE ?)` : ""}
-        ${starttime !== null ? " AND a.created_at >= ?" : ""}
-        ${endtime !== null ? " AND a.created_at <= ?" : ""}
-      GROUP BY a.id
-      ORDER BY a.created_at DESC
-    `;
-
-    // 参数数组（顺序要和上面 ? 一致，total 部分和主查询部分一致）
-    const params = [];
-
-    // total 子查询参数
-    if (category_id !== null) params.push(category_id);
-    if (keyword !== null) {
-      const likeStr = `%${keyword}%`;
-      params.push(likeStr, likeStr, likeStr);
-    }
-    if (starttime !== null) params.push(starttime);
-    if (endtime !== null) params.push(endtime);
-
-    // 主查询参数
-    if (category_id !== null) params.push(category_id);
-    if (keyword !== null) {
-      const likeStr = `%${keyword}%`;
-      params.push(likeStr, likeStr, likeStr);
-    }
-    if (starttime !== null) params.push(starttime);
-    if (endtime !== null) params.push(endtime);
-
-    // 分页
-    if (pageNo !== null && pageSize !== null) {
-      sql += ` LIMIT ${(pageNo - 1) * pageSize}, ${pageSize}`;
-    }
-
-    const rows = await connection.queryAsync(sql, params);
-    callback(rows);
-  } catch (err) {
-    console.error(err);
-    callback({ error: "服务器内部错误", err });
-  }
-};
-
-/**
- * 获取文章详情, 包括评论部分
- */
-module.exports.getContentDetail = async function (options, callback) {
-  const { id } = options;
-
-  function formatDateToSQLString(date) {
-    const d = new Date(date);
-    const pad = (n) => (n < 10 ? "0" + n : n);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ` + `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-  }
-
-  const curSql = `
-          SELECT
-              a.id,
-              a.title,
-              a.category_id AS category_id,
-              c.name AS category,
-              c.banner_url AS category_banner_url,
-              a.content,
-              a.description,
-              a.created_at,
-              a.view_count,
-              a.video_url,
-              a.cover_url,
-              a.is_published,
-              a.is_del,
-              -- 修改部分：使用 COUNT() 作为判断条件
-              -- 如果评论数量大于0，则聚合评论，否则返回空数组
-              IF(COUNT(comm.id) > 0,
-                  JSON_ARRAYAGG(
-                      JSON_OBJECT(
-                          'id', comm.id,
-                          'article_id', comm.article_id,
-                          'nickname', comm.nickname,
-                          'created_at', comm.created_at,
-                          'ip', comm.ip,
-                          'content', comm.content,
-                          'is_del', comm.is_del
-                      )
-                  ),
-                  JSON_ARRAY() -- 如果没有评论，返回一个空的JSON数组 '[]'
-              ) AS "comment"
-          FROM
-              article a
-          JOIN
-              category c ON a.category_id = c.id
-          LEFT JOIN
-              comment comm ON a.id = comm.article_id AND comm.is_del = '0'
-          WHERE
-              a.id = ?
-              AND a.is_del = '0'
-              AND a.is_published = '1'
-          GROUP BY
-              a.id; -- GROUP BY 主键 a.id 即可，其他 a.* 和 c.* 字段在MySQL中被认为是功能依赖于主键的
-  `;
-  const [cur] = await connection.queryAsync(curSql, [id]);
-
-  if (!cur) {
-    callback(null, { code: 0, msg: "没有数据!" });
-    return;
-  }
-
-  // 修改一下comment的数据类型
-  if (cur.comment && typeof cur.comment == "string") {
-    cur.comment = JSON.parse(cur.comment);
-  }
-
-  if (cur.content && typeof cur.content == "string") {
-    console.log('查看服务器IP==>>>>>.', utils.getServerIp())
-    cur.content = cur.content
-      .replaceAll('127.0.0.1', utils.getServerIp())
-      .replaceAll('localhost', utils.getServerIp());
-  }
-
-  const categoryId = cur.category_id;
-  const addTime = formatDateToSQLString(cur.created_at);
-
-  const prevSql = `SELECT a.*
-                   FROM article a
-                   WHERE a.category_id = ?
-                     AND a.is_del = '0'
-                     AND a.is_published = '1'
-                     AND a.created_at < ?
-                   ORDER BY a.created_at DESC
-                   LIMIT 1;`;
-  const [prev] = await connection.queryAsync(prevSql, [categoryId, addTime]);
-
-  const nextSql = `SELECT a.*
-                   FROM article a
-                   WHERE a.category_id = ?
-                     AND a.is_del = '0'
-                     AND a.is_published = '1'
-                     AND a.created_at > ?
-                   ORDER BY a.created_at ASC
-                   LIMIT 1;`;
-  const [next] = await connection.queryAsync(nextSql, [categoryId, addTime]);
-
-  // 新增viewCount
-  await connection.queryAsync(`update article set view_count=view_count+1 where id=?`, [id]);
-  cur.view_count = (cur.view_count ?? 0) + 1;
-
-  const res = {
-    prev: prev || null,
-    cur,
-    next: next || null,
-  };
-
-  callback(null, res);
+  getContentDetail(options, callback) {
+    contentService
+      .getContentDetail(options.id)
+      .then((data) => {
+        if (!data) callback(null, { code: 0, msg: "没有数据!" });
+        else callback(null, data);
+      })
+      .catch((err) => callback(err));
+  },
 };

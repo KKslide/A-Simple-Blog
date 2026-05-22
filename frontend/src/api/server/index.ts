@@ -1,4 +1,4 @@
-import ApiHelper from "@/api/apiCaller.js";
+import ApiHelper from '@/api/apiCaller.js'
 import type {
   ApiResponse,
   UploadResponse,
@@ -7,8 +7,8 @@ import type {
   CommentItem,
   MessageItem,
   DashboardData,
-  LoginResponse
-} from "@/types/api";
+  LoginResponse,
+} from '@/types/api'
 
 class ServerAPI extends ApiHelper {
   // 仪表盘数据
@@ -27,7 +27,10 @@ class ServerAPI extends ApiHelper {
     return this.post<ApiResponse, Record<string, unknown>>('/admin/categories/del', data)
   }
   editCategory(data: FormData | Record<string, unknown>) {
-    return this.post<ApiResponse, FormData | Record<string, unknown>>('/admin/categories/edit', data)
+    return this.post<ApiResponse, FormData | Record<string, unknown>>(
+      '/admin/categories/edit',
+      data,
+    )
   }
 
   // 文章管理
@@ -54,10 +57,13 @@ class ServerAPI extends ApiHelper {
 
   // 留言管理
   getMsgList(data: Record<string, unknown> = {}) {
-    return this.get<{ messages: MessageItem[]; total: number; pages: number }>('/admin/message/get', data)
+    return this.get<{ messages: MessageItem[]; total: number; pages: number }>(
+      '/admin/message/get',
+      data,
+    )
   }
   delMsg(data: Record<string, unknown>) {
-    return this.post<unknown, Record<string, unknown>>('/admin/massage/del', data)
+    return this.post<unknown, Record<string, unknown>>('/admin/message/del', data)
   }
 
   // 图片上传
@@ -73,9 +79,11 @@ class ServerAPI extends ApiHelper {
     return this.post<unknown>('/admin/logout')
   }
   userEdit(data: Record<string, unknown>) {
-    return this.post<{ code: number; msg?: string }, Record<string, unknown>>('/admin/info/edit', data)
+    return this.post<{ code: number; msg?: string }, Record<string, unknown>>(
+      '/admin/info/edit',
+      data,
+    )
   }
-
 }
 
-export default new ServerAPI();
+export default new ServerAPI()

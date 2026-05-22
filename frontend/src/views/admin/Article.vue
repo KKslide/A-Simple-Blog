@@ -1,7 +1,7 @@
 <template>
   <div id="articleManager">
-    <el-table :data="articleData" :border="true" style="width: 100%">
-      <el-table-column prop="id" label="文章ID" min-width="80"></el-table-column>
+    <el-table :data="articleData" :border="true" max-height="600" style="width: 100%">
+      <el-table-column prop="id" label="文章ID" width="80" fixed="left"></el-table-column>
       <el-table-column prop="title" label="分文章标题" min-width="300"></el-table-column>
       <el-table-column prop="cate_name" label="文章分类" min-width="100"></el-table-column>
       <el-table-column prop="created_at" label="添加时间" min-width="200">
@@ -51,7 +51,7 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="操作" min-width="150">
+      <el-table-column label="操作" width="150" fixed="right">
         <template #default="scope">
           <el-button size="small" @click="edit(scope.row)">编辑</el-button>
           <el-popconfirm
@@ -82,14 +82,16 @@
 
     <el-divider></el-divider>
     <el-pagination
-      v-if="articleData.length"
+      v-if="total > 0"
+      v-model:current-page="curPage"
+      v-model:page-size="pageSize"
       background
-      layout="prev, pager, next"
-      :page-size="pageSize"
-      :page-count="pages"
+      layout="sizes, prev, pager, next, total"
+      :page-sizes="pageSizes"
       :total="total"
       @current-change="pageChange"
-    ></el-pagination>
+      @size-change="pageSizeChange"
+    />
 
     <!-- drawer弹窗 -->
     <el-drawer
@@ -305,9 +307,9 @@ const handleChange = (editor: IDomEditor) => {
 const articleData = ref<ArticleItem[]>([])
 const categoryData = ref<CategoryItem[]>([])
 const pageSize = ref(5)
-const total = ref(1)
-const pages = ref(1)
+const total = ref(0)
 const curPage = ref(1)
+const pageSizes = [5, 10, 20, 50]
 
 const articleFromRef = ref<FormInstance>()
 const articleFrom = reactive<ArticleFrom>({
@@ -471,7 +473,6 @@ async function getArticleData() {
     await ServerAPI.getArticleList(params).then((res) => {
       const apiData = res.data || []
       total.value = apiData?.[0]?.total || 0
-      pages.value = Math.ceil(total.value / pageSize.value)
       articleData.value = apiData.map(normalizeArticleRow)
     })
     await nextTick()
@@ -489,6 +490,11 @@ async function getCateData() {
 
 function pageChange(currentPage: number) {
   curPage.value = currentPage
+  getArticleData()
+}
+
+function pageSizeChange() {
+  curPage.value = 1
   getArticleData()
 }
 

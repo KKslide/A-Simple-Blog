@@ -66,12 +66,13 @@ interface TagDataItem {
   icon: string
 }
 
-const bgColors = ['#64b0f2', '#f1b53d', '#3db9dc', '#ff5d48']
+const bgColors = ['#64b0f2', '#f1b53d', '#3db9dc', '#85b6b2', '#ff5d48']
 
 const tagData = reactive<TagDataItem[]>([
-  { tag: '', value: 0, icon: 'Document' },
+  { tag: '', value: 0, icon: 'View' },
   { tag: '', value: 0, icon: 'DataLine' },
   { tag: '', value: 0, icon: 'User' },
+  { tag: '', value: 0, icon: 'Avatar' },
   { tag: '', value: 0, icon: 'Notebook', href: 'article' }
 ])
 
@@ -101,12 +102,13 @@ const handleResize = utils._debounce(chartsResize, 200)
 function getData() {
   ServerAPI.getDashboard()
     .then((apiData: DashboardData) => {
-      const _tagData = tagData.map((v, i) => {
-        return (v = Object.assign(apiData.tag_list?.[i] || {}, v))
+      // 保留模板里的 icon/href, 仅用接口的 tag/value 覆盖 (assign 顺序不能写反)
+      const list = apiData.tag_list ?? []
+      list.forEach((apiItem, i) => {
+        if (tagData[i]) Object.assign(tagData[i], apiItem)
       })
-      Object.assign(tagData, _tagData)
       Object.assign(lineChartData, fixedObj(apiData.line_chart_data || []))
-      Object.assign(pieChartData, apiData.pie_chart_data || [])
+      pieChartData.splice(0, pieChartData.length, ...(apiData.pie_chart_data || []))
       showTagData.value = true
     })
     .then(() => {
@@ -124,7 +126,7 @@ function setLineData() {
   _Line_Chart_.value = echarts.init(lineChartRef.value)
   _Line_Chart_.value.setOption({
     title: {
-      text: '24小时访客记录概览',
+      text: '近24小时浏览量(PV)',
       x: 'left',
       y: 'top',
       textStyle: {
@@ -194,7 +196,7 @@ function setLineData() {
     },
     series: [
       {
-        name: '访客数',
+        name: '浏览量(PV)',
         type: 'line',
         data: lineChartData.value,
         color: '#F58080',
@@ -325,7 +327,7 @@ onBeforeUnmount(() => {
     justify-content: space-around;
 
     .admin_top_list_item {
-      width: 25%;
+      width: 20%;
       margin: 3px 10px;
       padding: 15px;
       display: flex;
@@ -386,6 +388,13 @@ onBeforeUnmount(() => {
     }
 
     .admin_top_list_item:nth-child(4):hover {
+      background: #85b6b2;
+      box-shadow: 0 0 3px #85b6b2, 0 0 5px #85b6b2, 0 0 10px #85b6b2,
+        0 0 15px #85b6b2, 0 0 20px #6a9e99, 0 0 5px #a8d4d0,
+        0 0 40px #6a9e99;
+    }
+
+    .admin_top_list_item:nth-child(5):hover {
       background: #ff5d48;
       box-shadow: 0 0 3px #ff5d48, 0 0 5px #ff5d48, 0 0 10px #ff5d48,
         0 0 15px #ff5d48, 0 0 20px #ff491b, 0 0 5px #22cbff,

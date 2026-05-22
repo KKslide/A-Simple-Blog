@@ -19,6 +19,20 @@ export const usePageStore = defineStore('page', {
     },
     addSearchResultToList(data: BlogItemConfig[]) {
       this.blogList['Search'] = data
+    },
+    /** 同步列表/搜索缓存中的文章阅读量 (详情页统计后更新) */
+    updateArticleViewCount(articleId: number, viewCount: number) {
+      const id = Number(articleId)
+      if (!id) return
+      for (const key of Object.keys(this.blogList)) {
+        const list = this.blogList[key]
+        if (!Array.isArray(list)) continue
+        const item = list.find((a) => Number(a.id) === id)
+        if (item) {
+          item.view_count = viewCount
+          return
+        }
+      }
     }
   }
 })

@@ -133,8 +133,23 @@ CREATE TABLE `visitors` (
   -- 不加 ON UPDATE, 只记录首次访问时间
   `visited_at` DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '访问时间',
   PRIMARY KEY (`id`) USING BTREE,
-  KEY `idx_ip` (`ip`) COMMENT 'IP 索引, 用于 UV 去重统计'
+  KEY `idx_ip` (`ip`) COMMENT 'IP 索引, 用于 UV 去重统计',
+  KEY `idx_visited_at` (`visited_at`) COMMENT '访问时间索引, 加速按日/小时聚合'
 ) ENGINE=InnoDB AUTO_INCREMENT=769 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='访客访问记录表 (用于 PV/UV 统计)';
 
+
+
+-- ----------------------------
+-- 文章阅读去重日志 (按 IP + 自然日, 用于准确统计阅读量)
+-- ----------------------------
+DROP TABLE IF EXISTS `article_view_log`;
+CREATE TABLE `article_view_log` (
+  `id`         INT UNSIGNED   NOT NULL AUTO_INCREMENT          COMMENT '记录ID',
+  `article_id` INT UNSIGNED   NOT NULL                         COMMENT '文章ID',
+  `ip`         VARCHAR(45)    NOT NULL DEFAULT ''              COMMENT '访客 IP',
+  `viewed_at`  DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '阅读时间',
+  PRIMARY KEY (`id`) USING BTREE,
+  KEY `idx_article_ip_day` (`article_id`, `ip`, `viewed_at`) COMMENT '同日同 IP 去重'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章阅读日志(去重)';
 
 SET FOREIGN_KEY_CHECKS = 1;

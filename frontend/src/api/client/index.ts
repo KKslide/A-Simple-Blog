@@ -8,7 +8,18 @@ import type {
 } from '@/interfaces'
 import ApiHelper from "@/api/apiCaller.js";
 
+/** 文章阅读统计响应 */
+export interface ArticleViewResult {
+  code: number
+  msg?: string
+  data?: {
+    counted: boolean
+    view_count: number
+  }
+}
+
 class ClientAPI extends ApiHelper {
+  /** 全站访问 PV (建议每会话调用一次) */
   visit() {
     return this.post("/user/visit");
   }
@@ -23,6 +34,11 @@ class ClientAPI extends ApiHelper {
 
   getBlogContent(data = {}) {
     return this.post<ContentResponse>("/user/content", data);
+  }
+
+  /** 记录文章阅读 (与详情接口分离) */
+  recordArticleView(data: { contentid: number }) {
+    return this.post<ArticleViewResult>("/user/content/view", data);
   }
 
   postBlogComment(data: CommentSendConfig) {

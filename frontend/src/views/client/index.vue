@@ -32,12 +32,22 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, RouterView } from 'vue-router'
 import Header from './Layout/Header.vue'
 import LangSwitcher from './Widgets/LangSwitcher.vue'
+import ClientAPI from '@/api/client/index'
+import { hasRecordedSiteVisit, markSiteVisitRecorded } from '@/utils/visitTracker'
 const route = useRoute()
 const isHome = computed(() => {
   return route.name == 'home'
 })
+function recordSiteVisit() {
+  if (hasRecordedSiteVisit()) return
+  ClientAPI.visit()
+    .then(() => markSiteVisitRecorded())
+    .catch(() => { /* 统计失败不影响浏览 */ })
+}
+
 onMounted(() => {
   document.body.classList.add('client')
+  recordSiteVisit()
 })
 onUnmounted(() => {
   document.body.classList.remove('client')

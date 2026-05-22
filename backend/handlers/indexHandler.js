@@ -1,100 +1,109 @@
 const util = require("../util/util");
-const getIP = function (req) {
-  return util.getClientIp(req).match(/(25[0-5]|2[0-4]\d|[0-1]\d{2}|[1-9]?\d)\.(25[0-5]|2[0-4]\d|[0-1]\d{2}|[1-9]?\d)\.(25[0-5]|2[0-4]\d|[0-1]\d{2}|[1-9]?\d)\.(25[0-5]|2[0-4]\d|[0-1]\d{2}|[1-9]?\d)/)[0];
-};
-/* sql操作 */
-const dbMoudle = require("../lib/sqlModule");
+const base = require("../lib/repositories/baseRepository");
+const articleRepo = require("../lib/repositories/articleRepository");
+const indexPageService = require("../lib/services/indexPageService");
+const contentService = require("../lib/services/contentService");
+const visitService = require("../lib/services/visitService");
+const articleViewService = require("../lib/services/articleViewService");
+const { success } = require("../lib/response");
 
-/* 获取文章列表数据(包括blog和vlog) */
-module.exports.getIndexPage = (req, res) => {
-  dbMoudle.getIndexPageData({}, (data) => {
+async function getIndexPage(req, res, next) {
+  try {
+    const data = await indexPageService.getIndexPageData();
     res.json(data);
-  });
-};
+  } catch (err) {
+    next(err);
+  }
+}
 
-/* 前端bloglist页面搜索 */
-module.exports.searchIndexPage = (req, res) => {
-  dbMoudle.doSearch(req, (data) => {
+async function searchIndexPage(req, res, next) {
+  try {
+    const data = await articleRepo.searchPublished(req.body);
     res.json(data);
-  });
-};
+  } catch (err) {
+    next(err);
+  }
+}
 
-/* 获取详情页 */
-module.exports.getContentPage = (req, res) => {
-  var opt = {
-    id: req.body.contentid || req.query.contentid,
-  };
-  dbMoudle.getContentDetail(opt, (err, data) => {
+async function getContentPage(req, res, next) {
+  try {
+    const id = req.body.contentid || req.query.contentid;
+    const data = await contentService.getContentDetail(id);
+    if (!data) return res.json({ code: 0, msg: "没有数据!" });
     res.json(data);
-  });
-};
+  } catch (err) {
+    next(err);
+  }
+}
 
-/* 评论文章 */
-module.exports.Comment = (req, res) => {
-  const ip = getIP(req);
-  var opt = {
-    table: "comment",
-    id: req.body.contentid || req.query.contentid,
-    data: {
-      article_id: req.body.contentid || req.query.contentid,
+async function Comment(req, res, next) {
+  try {
+    const ip = util.getClientIp(req);
+    const articleId = req.body.contentid || req.query.contentid;
+    await base.insert("comment", {
+      article_id: articleId,
       nickname: req.body.nickname || req.query.nickname || ip,
-      content: req.body.content || req.query.content,
-      ip: ip,
-    },
-  };
-  dbMoudle.doAdd(opt, (err, data) => {
-    if (err) {
-      res.json(err);
-    } else {
-      res.json({ code: "1", msg: "ok" });
-    }
-  });
-};
+      content: req.body.comment || req.query.comment,
+      ip,
+    });
+    return success(res, { msg: "成功" });
+  } catch (err) {
+    next(err);
+  }
+}
 
-/* 留言-获取 */
-module.exports.getMessages = (req, res) => {
-  var opt = {
-    table: "messages",
-    type: "all",
-  };
-  dbMoudle.doQuery(opt, (err, data) => {
+async function getMessages(req, res, next) {
+  try {
+    const data = await base.findAllActive("messages");
     res.json(data);
-  });
-};
+  } catch (err) {
+    next(err);
+  }
+}
 
-/* 用户留言 */
-module.exports.leaveMessage = (req, res) => {
-  var opt = {
-    table: "messages",
-    data: {
+async function leaveMessage(req, res, next) {
+  try {
+    await base.insert("messages", {
       nickname: req.query.nickname || req.body.nickname,
       content: req.query.content || req.body.content,
-      ip: getIP(req),
-    },
-  };
-  dbMoudle.doAdd(opt, (err, data) => {
-    if (err) {
-      res.json(err);
-    } else {
-      res.json({ code: "1", msg: "ok" });
-    }
-  });
-};
+      ip: util.getClientIp(req),
+    });
+    return success(res, { msg: "成功" });
+  } catch (err) {
+    next(err);
+  }
+}
 
-/* 访问统计 */
-module.exports.visitRecord = (req, res) => {
-  var opt = {
-    table: "visitors",
-    data: {
-      ip: getIP(req),
-      visited_at: util.getNow(),
-    },
-  };
-  dbMoudle.doAdd(opt, (err, data) => {
-    if (err) {
-      res.json(err);
-    } else {
-      res.json({ code: "1", msg: "ok" });
-    }
-  });
+async function visitRecord(req, res, next) {
+  try {
+    const result = await visitService.recordSiteVisit(req);
+    return success(res, { msg: "成功", data: result });
+  } catch (err) {
+    next(err);
+  }
+}
+
+/** 记录文章阅读 (与详情分离) */
+async function recordArticleView(req, res, next) {
+  try {
+    const articleId = req.body.contentid || req.body.articleId || req.query.contentid;
+    const ip = util.getClientIp(req);
+    const result = await articleViewService.recordArticleView(articleId, ip);
+    return success(res, { msg: "成功", data: result });
+  } catch (err) {
+    if (err.status === 400) return res.status(400).json({ code: 0, msg: err.message });
+    if (err.status === 404) return res.status(404).json({ code: 0, msg: err.message });
+    next(err);
+  }
+}
+
+module.exports = {
+  getIndexPage,
+  searchIndexPage,
+  getContentPage,
+  Comment,
+  getMessages,
+  leaveMessage,
+  visitRecord,
+  recordArticleView,
 };

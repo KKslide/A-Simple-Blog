@@ -1,28 +1,26 @@
-// @ts-nocheck
-const mysql = require("mysql");
-const util = require("util");
+const mysql = require("mysql2/promise");
+const dbConfig = require("../config/db");
+
+const pool = mysql.createPool(dbConfig);
+
+pool
+  .getConnection()
+  .then((conn) => {
+    console.log("数据库连上啦- -。");
+    conn.release();
+  })
+  .catch((err) => {
+    console.error("数据库连接失败:", err.message);
+  });
 
 /**
- * 创建连接池, 防止连接超时失效504 link👉https://github.com/mysqljs/mysql#pooling-connections
+ * 执行参数化 SQL
+ * @param {string} sql SQL 语句
+ * @param {unknown[]} [params] 占位符参数
+ * @returns {Promise<[import('mysql2').RowDataPacket[], import('mysql2').FieldPacket[]]>}
  */
-const pool = mysql.createPool({
-    host: "localhost", // 在家
-    user: "root",
-    password: "root123456", // 在家
-    port: 3306,
-    database: "myblog",
-    charset: 'utf8mb4'
-})
+async function query(sql, params = []) {
+  return pool.query(sql, params);
+}
 
-pool.getConnection(err => {
-    if (err) throw err;
-    console.log('数据库连上啦- -。');
-})
-
-// 绑定原始 query（保留原 callback 写法）
-const originalQuery = pool.query.bind(pool)
-
-// 添加一个 async 的 query 方法（支持 await）
-pool.queryAsync = util.promisify(originalQuery)
-
-module.exports = pool;
+module.exports = { pool, query };

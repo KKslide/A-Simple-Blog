@@ -59,6 +59,6 @@ router.post("/comment/del", handler.delComment);
 /* 留言-获取 */
 router.get("/message/get", handler.adminGetMessages);
 /* 留言-删除 */
-router.post("/massage/del", handler.delMessage);
+router.post("/message/del", handler.delMessage);
 
 module.exports = router;

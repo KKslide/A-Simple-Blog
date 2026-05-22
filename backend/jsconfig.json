@@ -2,7 +2,7 @@
   "compilerOptions": {
     "module": "CommonJS",
     "allowJs": true,
-    "checkJs": true,
+    "checkJs": false,
     "moduleResolution": "node",
     "ignoreDeprecations": "5.0"
   },

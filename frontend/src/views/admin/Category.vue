@@ -29,7 +29,14 @@
       </el-table-column>
       <el-table-column prop="banner_url" label="分类缩略图" min-width="150">
         <template #default="scope">
-          <el-image style="width: 150px; height: 34px" :src="scope.row.banner_url.startsWith('http') ? scope.row.banner_url : BaseUrl + scope.row.banner_url" fit="cover"></el-image>
+          <el-image
+            class="banner-table-thumb"
+            style="width: 150px; height: 34px"
+            :src="resolveBannerUrl(scope.row.banner_url)"
+            :preview-src-list="[resolveBannerUrl(scope.row.banner_url)]"
+            preview-teleported
+            fit="cover"
+          />
         </template>
       </el-table-column>
       <el-table-column label="操作" min-width="150">
@@ -59,22 +66,41 @@
           <div style="width: 100%">
             (banner长宽要求: 最佳比例👉2278x516, 或者 22:5 的长形图片)
           </div>
-          <el-upload action="#" class="categoryImgUploader" list-type="picture-card" v-model:file-list="cateImgFiles"
-            :auto-upload="false" :limit="1" :show-file-list="false" :on-change="uploadHandler">
-            <template #default>
-              <img v-if="tempUrl" :src="tempUrl" :style="{ width: bannerWidth + 'px', height: bannerHeight + 'px' }" />
-              <div v-else>
-                <el-icon>
-                  <Plus />
+          <div class="category-banner-wrap">
+            <el-upload
+              v-if="!tempUrl"
+              action="#"
+              class="categoryImgUploader"
+              list-type="picture-card"
+              v-model:file-list="cateImgFiles"
+              :auto-upload="false"
+              :limit="1"
+              :show-file-list="false"
+              :on-change="uploadHandler"
+            >
+              <template #default>
+                <div class="category-banner-placeholder">
+                  <el-icon>
+                    <Plus />
+                  </el-icon>
+                </div>
+              </template>
+            </el-upload>
+            <template v-else>
+              <div class="category-banner-preview">
+                <img
+                  class="category-banner-img"
+                  :src="tempUrl"
+                  :style="{ width: bannerWidth + 'px', height: bannerHeight + 'px' }"
+                />
+              </div>
+              <div class="cate_img_previewer">
+                <el-icon size="20" @click.stop="openBannerPreview"><zoom-in /></el-icon>
+                <el-icon size="20" @click.stop="clearBanner">
+                  <Delete />
                 </el-icon>
               </div>
             </template>
-          </el-upload>
-          <div v-if="tempUrl" class="cate_img_previewer">
-            <el-icon size="20"><zoom-in /></el-icon>
-            <el-icon size="20" @click="clearBanner">
-              <Delete />
-            </el-icon>
           </div>
         </el-form-item>
       </el-form>
@@ -86,6 +112,14 @@
         </div>
       </template>
     </el-dialog>
+
+    <el-image-viewer
+      v-if="bannerPreviewVisible"
+      :url-list="[tempUrl]"
+      show-progress
+      :hide-on-click-modal="true"
+      @close="bannerPreviewVisible = false"
+    />
   </div>
 </template>
 
@@ -124,6 +158,17 @@ const bannerWidth = ref(396)
 const bannerHeight = ref(86)
 const tempUrl = ref('')
 const cateImgFiles = ref<UploadFile[]>([])
+const bannerPreviewVisible = ref(false)
+
+function resolveBannerUrl(url: string): string {
+  if (!url) return ''
+  return url.startsWith('http') ? url : BaseUrl + url
+}
+
+function openBannerPreview() {
+  if (!tempUrl.value) return
+  bannerPreviewVisible.value = true
+}
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return ''
@@ -141,7 +186,7 @@ function edit(row: CategoryItem) {
   handleType.value = 'edit'
   dialogVisible.value = true
   Object.assign(categoryDetail, row)
-  tempUrl.value = row.banner_url.startsWith('http') ? row.banner_url : BaseUrl + row.banner_url
+  tempUrl.value = resolveBannerUrl(row.banner_url)
 }
 
 function del(id: number | '') {
@@ -216,7 +261,7 @@ function uploadHandler(file: UploadFile) {
     .then((res: UploadResponse) => {
       if (res.code === 1 && res.imageUrl) {
         categoryDetail.banner_url = res.imageUrl
-        tempUrl.value = file.url || URL.createObjectURL(file.raw as File)
+        tempUrl.value = (URL.createObjectURL(file.raw as File) || file.url) as string
         ElMessage.success('图片已上传')
       } else {
         ElMessage.error('图片上传失败')
@@ -249,25 +294,17 @@ onMounted(() => {
 #categoryManager {
   margin: 10px;
 
-  .categoryImgUploader {
-    :deep(.el-upload) {
-      width: 396px;
-      height: 88px;
-      overflow: hidden;
-    }
+  .banner-table-thumb {
+    cursor: pointer;
   }
 
-  .cate_img_previewer {
+  .category-banner-wrap {
+    position: relative;
+    display: inline-block;
     width: 396px;
     height: 88px;
-    position: absolute;
-    bottom: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 3px;
 
-    &:hover {
+    &:hover .cate_img_previewer {
       background-color: rgba(0, 0, 0, 0.5);
 
       .el-icon {
@@ -275,10 +312,56 @@ onMounted(() => {
         color: #fff;
       }
     }
+  }
+
+  .categoryImgUploader {
+    position: relative;
+    z-index: 0;
+
+    :deep(.el-upload) {
+      width: 396px;
+      height: 88px;
+      overflow: hidden;
+      margin: 0;
+    }
+  }
+
+  .category-banner-preview {
+    width: 396px;
+    height: 88px;
+    overflow: hidden;
+    border-radius: 6px;
+  }
+
+  .category-banner-img {
+    display: block;
+    object-fit: cover;
+    border-radius: 6px;
+  }
+
+  .category-banner-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cate_img_previewer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 6px;
+    pointer-events: none;
 
     .el-icon {
       opacity: 0;
       cursor: pointer;
+      pointer-events: auto;
+      transition: opacity 0.2s;
     }
 
     .el-icon:first-child {

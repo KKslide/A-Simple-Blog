@@ -1,5 +1,5 @@
+/** 管理端路由登录校验中间件 */
 module.exports = function (req, res, next) {
-  // console.log('那看来是OK的咯???', req.session)
   if (req.session && req.session.logData && req.session.logData.login) {
     // 登录状态，放行
     return next();

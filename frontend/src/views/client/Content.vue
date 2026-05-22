@@ -119,7 +119,8 @@ defineOptions({ name: 'ContentPage' })
 import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
-import ClientAPI from '@/api/client/index'
+import ClientAPI, { type ArticleViewResult } from '@/api/client/index'
+import { usePageStore } from '@/stores/pageStore'
 import hljs from 'highlight.js'
 import { useLangStore } from '@/stores/langStore'
 import { useI18n } from 'vue-i18n'
@@ -135,6 +136,7 @@ const texts = computed(() => ({
 const emptyCommentTip = computed(() => t('logContent.emptyCommentTip'))
 const emptyVisitor = computed(() => t('logContent.emptyVisitor'))
 const langStore = useLangStore()
+const pageStore = usePageStore()
 const BaseUrl = import.meta.env.VITE_MEDIA_URL || ''
 const contentObj = ref<ContentConfig>({
   id: 0,
@@ -210,35 +212,88 @@ function sendComment(data: { comment: string; name: string }) {
     }
   })
 }
+
+/** 防止同篇文章在短时间内重复请求统计接口 */
+let lastViewArticleId = 0
+let lastViewRequestAt = 0
+
+function syncViewCountToUi(articleId: number, viewCount: number) {
+  if (Number(contentObj.value.id) !== articleId) return
+  contentObj.value.view_count = viewCount
+  pageStore.updateArticleViewCount(articleId, viewCount)
+}
+
+/** 解析统计接口返回值并刷新详情页/列表缓存中的阅读量 */
+function applyViewCountFromResponse(res: ArticleViewResult, articleId: number, baseViewCount: number) {
+  const payload = res?.data
+  if (!payload) return
+
+  let next = baseViewCount
+  if (payload.view_count != null && !Number.isNaN(Number(payload.view_count))) {
+    next = Number(payload.view_count)
+  } else if (payload.counted) {
+    next = baseViewCount + 1
+  }
+
+  if (!Number.isFinite(next)) return
+  syncViewCountToUi(articleId, next)
+}
+
+function recordArticleView(articleId: number, baseViewCount?: number) {
+  const id = Number(articleId)
+  if (!id) return
+  const now = Date.now()
+  if (id === lastViewArticleId && now - lastViewRequestAt < 2000) return
+  lastViewArticleId = id
+  lastViewRequestAt = now
+
+  const base = Number(baseViewCount ?? contentObj.value.view_count ?? 0)
+  // 先乐观 +1, 接口返回后再校准 (同日重复访问会回退为服务端值)
+  syncViewCountToUi(id, base + 1)
+
+  ClientAPI.recordArticleView({ contentid: id })
+    .then((res) => {
+      if (Number(route.params.id) !== id) return
+      applyViewCountFromResponse(res, id, base)
+    })
+    .catch((err) => {
+      console.warn('recordArticleView failed', err)
+      if (Number(route.params.id) === id) {
+        syncViewCountToUi(id, base)
+      }
+    })
+}
+
 function getContentData() {
   const { id } = route.params as { id: string }
-  ClientAPI.getBlogContent({ contentid: Number(id) })
+  const articleId = Number(id)
+  ClientAPI.getBlogContent({ contentid: articleId })
     .then(async res => {
       const response = res as ContentResponse
-      if (response.code == 0) {
-        alert(response.msg)
+      const { prev, cur, next } = response
+      if (!cur) {
+        if (response.code === 0 && response.msg) alert(response.msg)
+        return
       }
-      else {
-        const { prev, cur, next } = response
-        if (!cur) return
-        contentObj.value = cur
-        prevObj.value = prev as ContentConfig | undefined
-        nextObj.value = next as ContentConfig | undefined
-        showPlayer.value = false
-        setTimeout(() => {
-          if (cur.category == 'Vlog') showPlayer.value = true
-        }, 0);
-        await nextTick()
-        previewImgList.length = 0
-        const imgs = contentRef.value?.querySelectorAll('img')
-        imgs?.forEach((v, i) => {
-          previewImgList.push(v.src as string)
-          v.onclick = () => {
-            previewIndex.value = i
-            showPreview.value = true
-          }
-        })
-      }
+      const baseViewCount = Number(cur.view_count ?? 0)
+      contentObj.value = cur
+      recordArticleView(cur.id ?? articleId, baseViewCount)
+      prevObj.value = prev as ContentConfig | undefined
+      nextObj.value = next as ContentConfig | undefined
+      showPlayer.value = false
+      setTimeout(() => {
+        if (cur.category == 'Vlog') showPlayer.value = true
+      }, 0)
+      await nextTick()
+      previewImgList.length = 0
+      const imgs = contentRef.value?.querySelectorAll('img')
+      imgs?.forEach((v, i) => {
+        previewImgList.push(v.src as string)
+        v.onclick = () => {
+          previewIndex.value = i
+          showPreview.value = true
+        }
+      })
     })
     .catch(err => {
       console.log(err)

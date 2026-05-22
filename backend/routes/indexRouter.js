@@ -43,6 +43,8 @@ router.get("/page", handler.getIndexPage);
 router.post("/search", handler.searchIndexPage);
 /* 获取详情页 */
 router.post("/content", handler.getContentPage);
+/* 记录文章阅读 (与详情分离) */
+router.post("/content/view", handler.recordArticleView);
 /* 评论文章 */
 router.post("/comment", handler.Comment);
 
@@ -50,7 +52,7 @@ router.post("/comment", handler.Comment);
 router.get("/message/get", handler.getMessages);
 router.post("/message/add", handler.leaveMessage);
 
-/* 统计访问者IP和时间 */
+/* 全站访问统计 (PV) */
 router.post("/visit", handler.visitRecord);
 
 module.exports = router;
