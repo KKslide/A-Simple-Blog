@@ -80,6 +80,13 @@ export interface ContentResponse {
   next?: ContentConfig | null
 }
 
+/** 文章详情数据（不含 code/msg 包装） */
+export interface ContentData {
+  prev?: ContentConfig | null
+  cur?: ContentConfig
+  next?: ContentConfig | null
+}
+
 export interface MsgDataConfig {
   id: number
   nickname: string

@@ -23,4 +23,10 @@ async function query(sql, params = []) {
   return pool.query(sql, params);
 }
 
-module.exports = { pool, query };
+/** 优雅关闭连接池 */
+async function closePool() {
+  await pool.end();
+  console.log("数据库连接池已关闭");
+}
+
+module.exports = { pool, query, closePool };

@@ -13,7 +13,7 @@ import type {
 class ServerAPI extends ApiHelper {
   // 仪表盘数据
   getDashboard() {
-    return this.get<DashboardData>('/admin/dashboard')
+    return this.get<ApiResponse<DashboardData>>('/admin/dashboard')
   }
 
   // 分类管理
@@ -57,7 +57,7 @@ class ServerAPI extends ApiHelper {
 
   // 留言管理
   getMsgList(data: Record<string, unknown> = {}) {
-    return this.get<{ messages: MessageItem[]; total: number; pages: number }>(
+    return this.get<ApiResponse<{ messages: MessageItem[]; total: number; pages: number }>>(
       '/admin/message/get',
       data,
     )

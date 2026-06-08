@@ -12,7 +12,7 @@ async function findByUsername(username) {
 }
 
 /**
- * 校验用户名密码。支持 bcrypt、旧版 MD5、明文。
+ * 校验用户名密码。支持 bcrypt 和旧版 MD5（登录成功后自动升级为 bcrypt）。
  * @param {string} username
  * @param {string} password
  */
@@ -22,15 +22,27 @@ async function authenticate(username, password) {
 
   const stored = user.password;
   let valid = false;
+  let needUpgrade = false;
 
   if (typeof stored === "string" && stored.startsWith("$2")) {
+    // bcrypt 哈希
     valid = await bcrypt.compare(password, stored);
   } else {
+    // 旧版 MD5，验证后自动升级为 bcrypt
     const md5 = crypto.createHash("md5").update(password).digest("hex");
-    valid = stored === password || stored === md5;
+    if (stored === md5) {
+      valid = true;
+      needUpgrade = true;
+    }
   }
 
   if (!valid) return null;
+
+  // 登录成功后自动将 MD5 升级为 bcrypt
+  if (needUpgrade) {
+    const newHash = await bcrypt.hash(password, 10);
+    await base.updateById("users", user.id, { password: newHash });
+  }
 
   const { password: _pwd, ...safe } = user;
   return safe;

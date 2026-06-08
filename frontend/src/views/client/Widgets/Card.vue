@@ -60,7 +60,7 @@ const handleMouseMove = (e: MouseEvent) => { // 给事件参数明确类型：e:
 const handleMouseEnter = () => clearTimeout(mouseLeaveDelay.value);
 
 const handleMouseLeave = () => {
-  mouseLeaveDelay.value = setTimeout(() => {
+  mouseLeaveDelay.value = window.setTimeout(() => {
     mouseX.value = 0;
     mouseY.value = 0;
   }, 1000);

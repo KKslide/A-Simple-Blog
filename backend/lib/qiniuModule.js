@@ -2,11 +2,11 @@
 var path = require('path');
 var fs = require('fs');
 var formidable = require("formidable");
-var qiniu = require("qiniu"); // 引入七牛模块  
-var bucket = 'kkslide'; //要上传的空间名
-var imageUrl = 'http://example.kkslide.fun/'; // 域名名称
-var accessKey = 'FqmlgBwy5Y8JLxmW7ZKtVwiKPnX_piGG1fdb52Yk';
-var secretKey = 'bo9whWlbwjd60aYQk5JzBYLOPtPmEyMx10ajEztK';
+var qiniu = require("qiniu"); // 引入七牛模块
+var bucket = process.env.QINIU_BUCKET || 'kkslide';
+var imageUrl = process.env.QINIU_IMAGE_URL || 'http://example.kkslide.fun/';
+var accessKey = process.env.QINIU_ACCESS_KEY;
+var secretKey = process.env.QINIU_SECRET_KEY;
 var mac = new qiniu.auth.digest.Mac(accessKey, secretKey);
 
 var options = {

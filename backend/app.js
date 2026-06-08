@@ -10,6 +10,7 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const compression = require("compression");
 const expressStaticGzip = require("express-static-gzip");
+const rateLimit = require("express-rate-limit");
 
 const sessionConfig = require("./config/session");
 const indexRouter = require("./routes/indexRouter");
@@ -19,8 +20,8 @@ const { notFoundHandler, errorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
-app.use(express.json({ limit: "200mb" }));
-app.use(express.urlencoded({ limit: "200mb", extended: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ limit: "1mb", extended: true }));
 
 // 跨域（Phase 4 将迁移至 Nginx）
 app.all("*", function (req, res, next) {
@@ -41,6 +42,22 @@ app.use(session(sessionConfig));
 app.use(logger("dev"));
 app.use(cookieParser());
 app.use(compression({ threshold: 1024 }));
+
+// 接口限流
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 分钟
+  max: 100, // 每个 IP 最多 100 次请求
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 0, msg: "请求过于频繁，请稍后再试" }
+});
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 分钟
+  max: 5, // 每个 IP 最多 5 次登录尝试
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { code: 0, msg: "登录尝试过多，请15分钟后再试" }
+});
 
 // 静态资源托管（Phase 4 将迁移至 Nginx）
 app.use("/upload", express.static(path.join(__dirname, "upload")));
@@ -73,9 +90,10 @@ app.get(/^\/(?!api|upload|server\/.*\.(js|css|map|ico|png|jpg|jpeg|svg)).*/, (re
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-app.use("/api/user", indexRouter);
-app.use("/api/admin", adminRouter);
-app.use("/api/pic", picRouter);
+app.use("/api/user", apiLimiter, indexRouter);
+app.use("/api/admin/login", loginLimiter);
+app.use("/api/admin", apiLimiter, adminRouter);
+app.use("/api/pic", apiLimiter, picRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

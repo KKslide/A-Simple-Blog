@@ -368,7 +368,7 @@ function formatDate(dateStr: string): string {
 function checkComment(row: ArticleItem) {
   ServerAPI.getArticleComment({ id: row.id }).then((res) => {
     curComment.value = row
-    const comments = Array.isArray(res) ? res : (res.data || [])
+    const comments = res.data || []
     curComment.value.comments = comments
   }).then(() => {
     showComment.value = true

@@ -101,7 +101,8 @@ const handleResize = utils._debounce(chartsResize, 200)
 
 function getData() {
   ServerAPI.getDashboard()
-    .then((apiData: DashboardData) => {
+    .then((res) => {
+      const apiData = res.data as DashboardData
       // 保留模板里的 icon/href, 仅用接口的 tag/value 覆盖 (assign 顺序不能写反)
       const list = apiData.tag_list ?? []
       list.forEach((apiItem, i) => {

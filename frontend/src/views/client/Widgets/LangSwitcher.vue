@@ -41,7 +41,7 @@ function msLeaveFn() {
   barRef.value.style.right = '-45px';
 }
 onMounted(() => {
-  timer.value = setTimeout(() => {
+  timer.value = window.setTimeout(() => {
     barRef.value.style.right = '-45px';
   }, 8000);
 })

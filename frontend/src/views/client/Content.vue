@@ -124,7 +124,7 @@ import { usePageStore } from '@/stores/pageStore'
 import hljs from 'highlight.js'
 import { useLangStore } from '@/stores/langStore'
 import { useI18n } from 'vue-i18n'
-import type { ContentConfig, ContentResponse, CommentItemConfig } from '@/interfaces'
+import type { ContentConfig, ContentData, CommentItemConfig, ApiResponse } from '@/interfaces'
 import { dayjs } from '@/config/config'
 const { t } = useI18n()
 const texts = computed(() => ({
@@ -269,12 +269,12 @@ function getContentData() {
   const articleId = Number(id)
   ClientAPI.getBlogContent({ contentid: articleId })
     .then(async res => {
-      const response = res as ContentResponse
-      const { prev, cur, next } = response
-      if (!cur) {
-        if (response.code === 0 && response.msg) alert(response.msg)
+      const { code, data, msg } = res as ApiResponse<ContentData>
+      if (!data?.cur) {
+        if (code === 0 && msg) alert(msg)
         return
       }
+      const { prev, cur, next } = data
       const baseViewCount = Number(cur.view_count ?? 0)
       contentObj.value = cur
       recordArticleView(cur.id ?? articleId, baseViewCount)

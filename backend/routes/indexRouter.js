@@ -1,13 +1,26 @@
-var express = require("express");
-var router = express.Router();
-var handler = require("../handlers/indexHandler");
-var path = require("path");
-var fs = require("fs");
+const express = require("express");
+const router = express.Router();
+const handler = require("../handlers/indexHandler");
+const path = require("path");
+const fs = require("fs");
+
+// 校验地图参数（仅允许中文、字母、数字、下划线、短横线）
+function isValidMapParam(str) {
+  return /^[一-龥a-zA-Z0-9_-]+$/.test(str);
+}
 
 // 获取地图数据接口
 router.get("/map", (req, res) => {
   const province = req.query.province; // 省份名
   const city = req.query.city; // 市名
+
+  // 校验参数，防止路径穿越
+  if (province && !isValidMapParam(province)) {
+    return res.status(400).json({ error: "参数不合法" });
+  }
+  if (city && !isValidMapParam(city)) {
+    return res.status(400).json({ error: "参数不合法" });
+  }
 
   let filePath = "";
 

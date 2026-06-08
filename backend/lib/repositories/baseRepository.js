@@ -64,6 +64,9 @@ async function findAllActive(tableKey) {
   return rows;
 }
 
+/** 分页最大每页条数 */
+const MAX_PAGE_SIZE = 100;
+
 /**
  * 分页查询未软删除记录
  * @param {string} tableKey
@@ -72,7 +75,7 @@ async function findAllActive(tableKey) {
 async function findPageActive(tableKey, { pageNo = 1, pageSize = 10, orderColumn } = {}) {
   const table = resolveTable(tableKey);
   const pNo = toPositiveInt(pageNo, 1);
-  const pSize = toPositiveInt(pageSize, 10);
+  const pSize = Math.min(toPositiveInt(pageSize, 10), MAX_PAGE_SIZE);
   const offset = (pNo - 1) * pSize;
   const order =
     orderColumn && COLUMNS[tableKey]?.has(orderColumn)

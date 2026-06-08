@@ -110,7 +110,8 @@ function resetForm() {
 }
 function getMessageList() {
   ClientAPI.getMessage().then((res) => {
-    messageList.value = res.sort((n, m) => {
+    const list = (res.data || []) as MsgDataConfig[]
+    messageList.value = list.sort((n, m) => {
       const nTime = new Date(n.created_at).getTime()
       const mTime = new Date(m.created_at).getTime()
       return mTime - nTime

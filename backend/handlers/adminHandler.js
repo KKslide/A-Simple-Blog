@@ -12,7 +12,7 @@ async function doLogin(req, res, next) {
     const user = await userRepo.authenticate(username, password);
     if (!user) return fail(res, "用户名或密码错误！");
     req.session.logData = { ...user, login: true };
-    return res.json({ code: 1, msg: "登陆成功! ", userInfo: user });
+    return success(res, { msg: "登陆成功!", data: { userInfo: user } });
   } catch (err) {
     next(err);
   }
@@ -39,7 +39,7 @@ async function editInfo(req, res, next) {
 async function getDashboard(req, res, next) {
   try {
     const data = await dashboardService.getDashboardData();
-    res.json(data);
+    return success(res, { data });
   } catch (err) {
     next(err);
   }
@@ -59,7 +59,7 @@ async function getCategory(req, res, next) {
     const data = hasPagination && searchType !== "all"
       ? await base.findPageActive("category", { pageNo, pageSize, orderColumn: "sort_order" })
       : await base.findAllActive("category");
-    res.json({ data });
+    return success(res, { data });
   } catch (err) {
     next(err);
   }
@@ -111,7 +111,7 @@ async function getArticle(req, res, next) {
       pageNo: pageNo > 0 ? pageNo : 1,
       pageSize: pageSize > 0 ? pageSize : 10,
     });
-    res.json({ data });
+    return success(res, { data });
   } catch (err) {
     next(err);
   }
@@ -165,7 +165,7 @@ async function editArticle(req, res, next) {
 async function getComment(req, res, next) {
   try {
     const data = await commentRepo.findByArticleId(req.query.id);
-    res.json(data);
+    return success(res, { data });
   } catch (err) {
     next(err);
   }
@@ -193,11 +193,11 @@ async function adminGetMessages(req, res, next) {
   try {
     const pageNo = Number(req.body.pageNo ?? req.query.pageNo ?? 1);
     const pageSize = Number(req.body.pageSize ?? req.query.pageSize ?? 10);
-    const result = await messageRepo.listAdminPage({
+    const data = await messageRepo.listAdminPage({
       pageNo: pageNo > 0 ? pageNo : 1,
       pageSize: pageSize > 0 ? pageSize : 10,
     });
-    res.json(result);
+    return success(res, { data });
   } catch (err) {
     next(err);
   }

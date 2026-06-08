@@ -1,11 +1,11 @@
 // @ts-nocheck
-var express = require("express");
-var router = express.Router();
-var path = require("path");
-var fs = require("fs");
-var formidable = require("formidable");
+const express = require("express");
+const router = express.Router();
+const path = require("path");
+const fs = require("fs");
+const formidable = require("formidable");
 /* 七牛云图片上传 */
-var qiniuUpload = require('../lib/qiniuModule.js');
+const qiniuUpload = require('../lib/qiniuModule.js');
 
 /* 七牛云图片上传 */
 router.post("/upload", qiniuUpload.picUpload);
@@ -14,48 +14,46 @@ router.post("/upload", qiniuUpload.picUpload);
 /* tip: 文件上传时, 前端的content-type一定要是multipart/form-data */
 router.post("/img_upload", (req, res) => {
   console.log("***进入文件上传***");
-  var form = new formidable.IncomingForm();
+  const form = new formidable.IncomingForm();
   form.uploadDir = "./upload";
   form.keepExtensions = true;
-  try {
-    form.parse(req, function (err, fields, files) {
-      const file = files.file;
-      const tempPath = file.path;
-      let originalName = file.name;
-      if (originalName.indexOf("minpic") == -1) {
-        let _tempName = originalName.split(".");
-        originalName = _tempName[0] + "_" + Date.now() + "." + _tempName[1];
+
+  form.parse(req, function (err, fields, files) {
+    if (err) {
+      console.log("form.parse error:", err);
+      return res.status(500).json({ code: 0, msg: "上传失败！" });
+    }
+
+    // 校验文件是否存在
+    if (!files || !files.file) {
+      return res.status(400).json({ code: 0, msg: "未选择文件" });
+    }
+
+    const file = files.file;
+    const tempPath = file.path;
+    let originalName = file.name;
+
+    if (originalName.indexOf("minpic") == -1) {
+      let _tempName = originalName.split(".");
+      originalName = _tempName[0] + "_" + Date.now() + "." + _tempName[1];
+    }
+    const targetPath = path.join(form.uploadDir, originalName);
+
+    fs.rename(tempPath, targetPath, (renameErr) => {
+      if (renameErr) {
+        console.log("fs.rename error:", renameErr);
+        return res.status(500).json({ code: 0, msg: "上传失败！" });
       }
-      const targetPath = path.join(form.uploadDir, originalName);
-      if (err) {
-        console.log(err);
-        res.json({ code: 0, msg: "上传失败！" });
-      } else {
-        var ip = req.headers["x-real-ip"] ? req.headers["x-real-ip"] : req.ip.replace(/::ffff:/, ""); // 有问题
-        ip += ":" + (process.env.PORT || "8088");
-        fs.rename(tempPath, targetPath, (err) => {
-          if (err) {
-            console.log(err);
-            res.json({ code: 0, msg: "上传失败！" });
-            return;
-          } else {
-            setTimeout(() => {
-              res.json({
-                code: 1,
-                msg: "上传成功！",
-                errno: 0,
-                path: "/" + targetPath,
-                data: ["/" + targetPath],
-                imageUrl: "/" + targetPath,
-              });
-            }, 1000);
-          }
-        });
-      }
+      res.json({
+        code: 1,
+        msg: "上传成功！",
+        errno: 0,
+        path: "/" + targetPath,
+        data: ["/" + targetPath],
+        imageUrl: "/" + targetPath,
+      });
     });
-  } catch (error) {
-    console.log("upload error ==>>>>", error);
-  }
+  });
 });
 
 module.exports = router;

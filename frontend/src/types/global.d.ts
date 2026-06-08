@@ -3,6 +3,7 @@
 // }
 
 declare module 'vue-plyr';
+declare module '*.css';
 
 declare const BMapGL: object;
 

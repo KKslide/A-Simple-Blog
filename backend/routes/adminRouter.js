@@ -1,15 +1,15 @@
-var express = require("express");
-var router = express.Router();
-var handler = require("../handlers/adminHandler.js");
-var authMiddleware = require("../middleware/auth.js");
+const express = require("express");
+const router = express.Router();
+const handler = require("../handlers/adminHandler.js");
+const authMiddleware = require("../middleware/auth.js");
 
 /* ********* 管理端 ******** */
 /* 检测是否登陆 */
 router.get("/isadmin", (req, res) => {
-  if (JSON.stringify(req.cookies) == "{}") {
-    res.json({ code: 0, msg: "请先登录啦" });
-  } else {
+  if (req.session?.logData?.login) {
     res.json({ code: 1, islogin: "logined", msg: "登陆成功" });
+  } else {
+    res.json({ code: 0, msg: "请先登录啦" });
   }
 });
 /* 登陆/登出 */

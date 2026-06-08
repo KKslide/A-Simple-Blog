@@ -72,7 +72,7 @@ import { useRouter } from 'vue-router'
 import ClientAPI from '@/api/client/index'
 import utils from '@/utils'
 import { storeToRefs } from 'pinia'
-import type { BlogItemConfig } from '@/interfaces'
+import type { BlogItemConfig, BloglistConfig } from '@/interfaces'
 import { usePageStore } from '@/stores/pageStore'
 const pageStore = usePageStore()
 const { blogList } = storeToRefs(pageStore)
@@ -118,7 +118,7 @@ function checkContent(id: number) {
 function getList() {
   ClientAPI.getBlogList()
     .then(async res => {
-      pageStore.setPage(res)
+      pageStore.setPage(res.data as BloglistConfig)
       await nextTick()
       updateCarouselType() // 初始化判断
       window.addEventListener('resize', handleResize)

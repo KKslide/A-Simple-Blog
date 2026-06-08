@@ -170,7 +170,8 @@ import { dayjs } from '@/config/config'
 import type { CarouselInstance } from 'element-plus'
 import type {
   CategoryItemConfig,
-  BlogItemConfig
+  BlogItemConfig,
+  BloglistConfig
 } from '@/interfaces/index'
 import { usePageStore } from '@/stores/pageStore'
 import ClientAPI from '@/api/client/index'
@@ -273,14 +274,15 @@ function checkCategory (cate?: CategoryItemConfig | null) {
 function getList () {
   ClientAPI.getBlogList()
     .then(async res => {
-      pageStore.setPage(res)
+      const data = res.data as BloglistConfig
+      pageStore.setPage(data)
 
       // 稍微等待一下页面
       await nextTick()
 
       // 刷新后, 保持一下分类列表状态
       if (route.params.catename) {
-        const _cateObj_ = res.catList.find(v => v.name == route.params.catename)
+        const _cateObj_ = data.catList.find(v => v.name == route.params.catename)
         // 如果乱写或者找不到, 就去404
         if (!_cateObj_) {
           return router.push({ name: 'NotFound' })
@@ -304,7 +306,7 @@ function searchHandler () {
       searchCancelHandler()
       router.push({ name: 'searchlist' })
       // 在这里为bloglist新造一个key,名为Search
-      pageStore.addSearchResultToList(res)
+      pageStore.addSearchResultToList(res.data as BlogItemConfig[])
     })
     .catch(err => {
       console.log(err)

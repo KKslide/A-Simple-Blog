@@ -41,11 +41,6 @@ async function getContentDetail(id) {
     cur.comment = JSON.parse(cur.comment);
   }
 
-  if (cur.content && typeof cur.content === "string") {
-    const serverIp = utils.getServerIp();
-    cur.content = cur.content.replaceAll("127.0.0.1", serverIp).replaceAll("localhost", serverIp);
-  }
-
   const categoryId = cur.category_id;
   const addTime = formatDateToSQLString(cur.created_at);
 

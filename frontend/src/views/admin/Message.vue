@@ -79,9 +79,10 @@ function deleteMsg(id: number) {
 
 function getMessageList() {
   ServerAPI.getMsgList({ pageNo: curPage.value, pageSize: pageSize.value }).then((res) => {
-    msgList.value = res.messages || []
-    total.value = res.total || 0
-    pages.value = res.pages || 0
+    const data = res.data as { messages: MessageItem[]; total: number; pages: number }
+    msgList.value = data?.messages || []
+    total.value = data?.total || 0
+    pages.value = data?.pages || 0
   })
 }
 

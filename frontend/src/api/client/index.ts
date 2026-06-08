@@ -2,9 +2,10 @@ import type {
   MsgDataConfig,
   MsgSendConfig,
   BloglistConfig,
-  ContentResponse,
+  ContentData,
   CommentSendConfig,
-  BlogItemConfig
+  BlogItemConfig,
+  ApiResponse
 } from '@/interfaces'
 import ApiHelper from "@/api/apiCaller.js";
 
@@ -25,15 +26,15 @@ class ClientAPI extends ApiHelper {
   }
 
   getBlogList(data = {}) {
-    return this.get<BloglistConfig>("/user/page", data);
+    return this.get<ApiResponse<BloglistConfig>>("/user/page", data);
   }
 
   searchBlogList(params = {}) {
-    return this.post<BlogItemConfig[]>('/user/search', params);
+    return this.post<ApiResponse<BlogItemConfig[]>>('/user/search', params);
   }
 
   getBlogContent(data = {}) {
-    return this.post<ContentResponse>("/user/content", data);
+    return this.post<ApiResponse<ContentData>>("/user/content", data);
   }
 
   /** 记录文章阅读 (与详情接口分离) */
@@ -46,15 +47,11 @@ class ClientAPI extends ApiHelper {
   }
 
   getVlogList(params = {}) {
-    return this.get(`/user/page`, params);
-  }
-
-  getWorkList(data = {}) {
-    return this.post("/user/getworklist", data);
+    return this.get<ApiResponse<BloglistConfig>>(`/user/page`, params);
   }
 
   getMessage() {
-    return this.get<MsgDataConfig[]>('/user/message/get')
+    return this.get<ApiResponse<MsgDataConfig[]>>('/user/message/get')
   }
 
   postMessage(data: MsgSendConfig) {

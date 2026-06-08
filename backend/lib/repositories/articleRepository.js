@@ -34,11 +34,19 @@ async function searchPublished(body) {
   let { keyword, starttime, endtime, category_id, pageNo, pageSize } = body;
 
   keyword = keyword && String(keyword).trim() !== "" ? String(keyword).trim() : null;
-  category_id = category_id != null && !isNaN(category_id) ? Number(category_id) : null;
+  category_id = category_id != null && !isNaN(category_id) && Number(category_id) !== 0 ? Number(category_id) : null;
   starttime = starttime && String(starttime).trim() !== "" ? String(starttime).trim() : null;
   endtime = endtime && String(endtime).trim() !== "" ? String(endtime).trim() : null;
   pageNo = pageNo != null && !isNaN(pageNo) ? Number(pageNo) : null;
   pageSize = pageSize != null && !isNaN(pageSize) ? Number(pageSize) : null;
+
+  // 构建 WHERE 子句片段
+  const conditions = [];
+  if (category_id !== null) conditions.push("category_id = ?");
+  if (keyword !== null) conditions.push("(title LIKE ? OR description LIKE ?)");
+  if (starttime !== null) conditions.push("created_at >= ?");
+  if (endtime !== null) conditions.push("created_at <= ?");
+  const whereClause = conditions.length ? " AND " + conditions.join(" AND ") : "";
 
   let sql = `
     SELECT
@@ -46,10 +54,7 @@ async function searchPublished(body) {
        FROM article a2
        LEFT JOIN category c2 ON a2.category_id = c2.id
        WHERE a2.is_del = '0' AND a2.is_published = '1' AND c2.is_del = '0'
-       ${category_id !== null ? " AND a2.category_id = ?" : ""}
-       ${keyword !== null ? " AND (a2.title LIKE ? OR a2.description LIKE ?)" : ""}
-       ${starttime !== null ? " AND a2.created_at >= ?" : ""}
-       ${endtime !== null ? " AND a2.created_at <= ?" : ""}
+       ${whereClause}
       ) AS total,
       COUNT(cm.article_id) AS comment_num,
       cate.name AS cate_name,
@@ -58,27 +63,21 @@ async function searchPublished(body) {
     LEFT JOIN category cate ON a.category_id = cate.id
     LEFT JOIN comment cm ON a.id = cm.article_id AND cm.is_del = '0'
     WHERE a.is_del = '0' AND a.is_published = '1' AND cate.is_del = '0'
-    ${category_id !== null ? " AND a.category_id = ?" : ""}
-    ${keyword !== null ? " AND (a.title LIKE ? OR a.description LIKE ?)" : ""}
-    ${starttime !== null ? " AND a.created_at >= ?" : ""}
-    ${endtime !== null ? " AND a.created_at <= ?" : ""}
+    ${whereClause}
     GROUP BY a.id
     ORDER BY a.created_at DESC
   `;
 
-  const params = [];
-  const pushFilters = () => {
-    if (category_id !== null) params.push(category_id);
-    if (keyword !== null) {
-      const like = `%${keyword}%`;
-      params.push(like, like);
-    }
-    if (starttime !== null) params.push(starttime);
-    if (endtime !== null) params.push(endtime);
+  // 参数收集一次，用于子查询 + 主查询（各一份）
+  const buildParams = () => {
+    const p = [];
+    if (category_id !== null) p.push(category_id);
+    if (keyword !== null) { const like = `%${keyword}%`; p.push(like, like); }
+    if (starttime !== null) p.push(starttime);
+    if (endtime !== null) p.push(endtime);
+    return p;
   };
-
-  pushFilters();
-  pushFilters();
+  const params = [...buildParams(), ...buildParams()];
 
   if (pageNo !== null && pageSize !== null) {
     const offset = (pageNo - 1) * pageSize;
