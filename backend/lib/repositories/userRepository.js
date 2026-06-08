@@ -16,6 +16,13 @@ async function findByUsername(username) {
  * @param {string} username
  * @param {string} password
  */
+/**
+ * 校验用户名密码。前端发送 md5(password)。
+ * - 旧版 MD5：直接比对，登录成功后自动升级为 bcrypt(md5)
+ * - bcrypt：bcrypt.compare(md5, stored) 比对
+ * @param {string} username
+ * @param {string} password 前端已 MD5 过的密码
+ */
 async function authenticate(username, password) {
   const user = await findByUsername(username);
   if (!user) return null;
@@ -25,12 +32,11 @@ async function authenticate(username, password) {
   let needUpgrade = false;
 
   if (typeof stored === "string" && stored.startsWith("$2")) {
-    // bcrypt 哈希
+    // bcrypt(md5_password)
     valid = await bcrypt.compare(password, stored);
   } else {
-    // 旧版 MD5，验证后自动升级为 bcrypt
-    const md5 = crypto.createHash("md5").update(password).digest("hex");
-    if (stored === md5) {
+    // 旧版 MD5，直接比对
+    if (stored === password) {
       valid = true;
       needUpgrade = true;
     }
@@ -38,7 +44,7 @@ async function authenticate(username, password) {
 
   if (!valid) return null;
 
-  // 登录成功后自动将 MD5 升级为 bcrypt
+  // 登录成功后自动将 MD5 升级为 bcrypt(md5)
   if (needUpgrade) {
     const newHash = await bcrypt.hash(password, 10);
     await base.updateById("users", user.id, { password: newHash });
@@ -57,7 +63,7 @@ async function hashPassword(password) {
 }
 
 /**
- * 更新用户信息（密码会自动哈希）
+ * 更新用户信息（密码自动 bcrypt，接收前端 MD5 过的值）
  * @param {number} id
  * @param {{ username?: string; password?: string }} data
  */

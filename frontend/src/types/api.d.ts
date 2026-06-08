@@ -84,12 +84,15 @@ export interface DashboardData {
   pie_chart_data: DashboardPieItem[]
 }
 
+/** @deprecated 使用 ApiResponse<{ userInfo: {...} }> 替代 */
 export interface LoginResponse {
   code: number
   msg?: string
-  userInfo?: {
-    id: number
-    username: string
-    is_admin: number
+  data?: {
+    userInfo?: {
+      id: number
+      username: string
+      is_admin: number
+    }
   }
 }

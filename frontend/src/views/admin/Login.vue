@@ -87,7 +87,7 @@ import { useRouter } from 'vue-router'
 import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import ServerAPI from '@/api/server'
 import { ElMessage } from 'element-plus'
-import type { LoginResponse } from '@/types/api'
+import type { ApiResponse } from '@/types/api'
 import { useUserStore } from '@/stores/userStore'
 
 interface UserForm {
@@ -161,9 +161,9 @@ onBeforeUnmount(() => {
 function submit() {
   const { username, password } = userForm
   ServerAPI.userLogin({ username, password: md5(password) })
-    .then((res: LoginResponse) => {
+    .then((res: ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>) => {
       if (res.code === 1) {
-        UserStore.setUserInfo({ ...res.userInfo, login: true })
+        UserStore.setUserInfo({ ...res.data?.userInfo, login: true })
         ElMessage.success('登陆成功✌️')
         router.push({ name: 'dashboard' })
       } else {

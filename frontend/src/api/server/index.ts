@@ -7,7 +7,6 @@ import type {
   CommentItem,
   MessageItem,
   DashboardData,
-  LoginResponse,
 } from '@/types/api'
 
 class ServerAPI extends ApiHelper {
@@ -73,7 +72,7 @@ class ServerAPI extends ApiHelper {
 
   // 登陆/登出/修改密码
   userLogin(data: Record<string, unknown>) {
-    return this.post<LoginResponse, Record<string, unknown>>('/admin/login', data)
+    return this.post<ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>, Record<string, unknown>>('/admin/login', data)
   }
   userLogout() {
     return this.post<unknown>('/admin/logout')
