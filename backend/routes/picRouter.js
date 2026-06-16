@@ -3,7 +3,8 @@ const express = require("express");
 const router = express.Router();
 const path = require("path");
 const fs = require("fs");
-const formidable = require("formidable");
+const { formidable } = require("formidable");
+const { success, fail } = require("../lib/response");
 /* 七牛云图片上传 */
 const qiniuUpload = require('../lib/qiniuModule.js');
 
@@ -12,48 +13,48 @@ router.post("/upload", qiniuUpload.picUpload);
 
 /* 本地图片上传 */
 /* tip: 文件上传时, 前端的content-type一定要是multipart/form-data */
-router.post("/img_upload", (req, res) => {
+router.post("/img_upload", async (req, res) => {
   console.log("***进入文件上传***");
-  const form = new formidable.IncomingForm();
-  form.uploadDir = "./upload";
-  form.keepExtensions = true;
 
-  form.parse(req, function (err, fields, files) {
-    if (err) {
-      console.log("form.parse error:", err);
-      return res.status(500).json({ code: 0, msg: "上传失败！" });
-    }
+  const uploadDir = path.join(__dirname, "../upload");
+  if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+  const form = formidable({
+    uploadDir,
+    keepExtensions: true,
+  });
+
+  try {
+    const [fields, files] = await form.parse(req);
 
     // 校验文件是否存在
-    if (!files || !files.file) {
-      return res.status(400).json({ code: 0, msg: "未选择文件" });
+    const fileArr = files.file;
+    if (!fileArr || !fileArr.length) {
+      return fail(res, "未选择文件");
     }
 
-    const file = files.file;
-    const tempPath = file.path;
-    let originalName = file.name;
+    const file = fileArr[0];
+    const tempPath = file.filepath;
+    let originalName = file.originalFilename;
 
     if (originalName.indexOf("minpic") == -1) {
-      let _tempName = originalName.split(".");
-      originalName = _tempName[0] + "_" + Date.now() + "." + _tempName[1];
+      const ext = path.extname(originalName);
+      const base = path.basename(originalName, ext);
+      originalName = base + "_" + Date.now() + ext;
     }
-    const targetPath = path.join(form.uploadDir, originalName);
+    const targetPath = path.join(uploadDir, originalName);
 
     fs.rename(tempPath, targetPath, (renameErr) => {
       if (renameErr) {
         console.log("fs.rename error:", renameErr);
-        return res.status(500).json({ code: 0, msg: "上传失败！" });
+        return fail(res, "上传失败！");
       }
-      res.json({
-        code: 1,
-        msg: "上传成功！",
-        errno: 0,
-        path: "/" + targetPath,
-        data: ["/" + targetPath],
-        imageUrl: "/" + targetPath,
-      });
+      success(res, { msg: "上传成功！", data: { imageUrl: "/upload/" + originalName } });
     });
-  });
+  } catch (err) {
+    console.log("form.parse error:", err);
+    return fail(res, "上传失败！");
+  }
 });
 
 module.exports = router;

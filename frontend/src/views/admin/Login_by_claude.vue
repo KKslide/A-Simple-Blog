@@ -1,5 +1,10 @@
 <template>
-  <div id="loginWrapper" :class="{ 'on-start': isStarted, 'document-loaded': isLoaded }">
+  <!--
+    改动 1: 去掉 ref="loginRef", 改用 :class 绑定响应式变量
+    原来是在 onMounted 里手动 classList.add('on-start', 'document-loaded')
+    现在直接让 Vue 的响应式系统驱动 class 的增减
+  -->
+  <div id="loginWrapper" :class="{ 'on-start': isOnStart, 'document-loaded': isDocumentLoaded }">
     <main>
       <form class="form" @submit.prevent="submit">
         <div class="form__cover"></div>
@@ -20,53 +25,56 @@
         </div>
         <div class="form__content">
           <h1 class="form__content_h1">Login</h1>
-          
-          <div class="styled-input" :class="{ filled: isUsernameActive }">
+
+          <!--
+            改动 2: .styled-input 的 filled class 用 :class 绑定, 替代手动 classList.add/remove
+            改动 3: focus/blur 用 Vue 事件指令, 替代手动 addEventListener
+          -->
+          <div class="styled-input" :class="{ filled: usernameFilled }">
             <input
               type="text"
               class="styled-input__input"
               name="username"
               v-model="userForm.username"
-              @focus="usernameFocused = true"
-              @blur="usernameFocused = false"
+              @focus="onInputFocus('username')"
+              @blur="onInputBlur('username')"
             />
             <div class="styled-input__placeholder">
               <span class="styled-input__placeholder-text">
+                <!--
+                  改动 4: 原来是在 onMounted 里拼接 innerHTML 字符串注入 <span class="letter">
+                  现在直接用 v-for 渲染, letter.active 驱动 active class
+                -->
                 <span
-                  v-for="(char, i) in 'Username'"
-                  :key="`user-${i}`"
+                  v-for="(letter, i) in usernameLetters"
+                  :key="i"
                   class="letter"
-                  :class="{ active: isUsernameActive }"
-                  :style="{ animationDelay: `${isUsernameActive ? i * 50 : ('Username'.length - 1 - i) * 50}ms` }"
-                >
-                  {{ char }}
-                </span>
+                  :class="{ active: letter.active }"
+                >{{ letter.char }}</span>
               </span>
             </div>
             <div class="styled-input__circle"></div>
           </div>
 
-          <div class="styled-input" :class="{ filled: isPasswordActive }">
+          <div class="styled-input" :class="{ filled: passwordFilled }">
             <input
               type="password"
               class="styled-input__input"
               name="password"
               v-model="userForm.password"
-              @focus="passwordFocused = true"
-              @blur="passwordFocused = false"
-              @keyup.enter="submit" 
+              @focus="onInputFocus('password')"
+              @blur="onInputBlur('password')"
+              @keyup.enter="submit"
             />
+            <!-- 改动 5: @keydown="typing" + keyCode 判断 → 直接用 @keyup.enter 指令 -->
             <div class="styled-input__placeholder">
               <span class="styled-input__placeholder-text">
                 <span
-                  v-for="(char, i) in 'Password'"
-                  :key="`pass-${i}`"
+                  v-for="(letter, i) in passwordLetters"
+                  :key="i"
                   class="letter"
-                  :class="{ active: isPasswordActive }"
-                  :style="{ animationDelay: `${isPasswordActive ? i * 50 : ('Password'.length - 1 - i) * 50}ms` }"
-                >
-                  {{ char }}
-                </span>
+                  :class="{ active: letter.active }"
+                >{{ letter.char }}</span>
               </span>
             </div>
             <div class="styled-input__circle"></div>
@@ -87,7 +95,6 @@
               </span>
             </span>
           </button>
-          
           <button type="button" class="styled-button" @click="router.push({ name: 'home' })">
             <span class="styled-button__real-text-holder">
               <span class="styled-button__real-text">Home Page</span>
@@ -112,60 +119,118 @@
 <script setup lang="ts">
 import { md5 } from 'js-md5'
 import { useRouter } from 'vue-router'
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import ServerAPI from '@/api/server'
 import { ElMessage } from 'element-plus'
-import type { ApiResponse, UserForm } from '@/types/api'
+import type { ApiResponse } from '@/types/api'
 import { useUserStore } from '@/stores/userStore'
+
+// ---------- types ----------
+
+interface UserForm {
+  username: string
+  password: string
+}
+
+// 每个字母的状态: 字符本身 + 是否处于 active 动画
+interface LetterState {
+  char: string
+  active: boolean
+}
+
+type InputField = 'username' | 'password'
+
+// ---------- store / router ----------
 
 const UserStore = useUserStore()
 const router = useRouter()
+
+// ---------- 表单数据 ----------
 
 const userForm = reactive<UserForm>({
   username: '',
   password: ''
 })
 
-// 控制页面初始动画状态
-const isStarted = ref(false)
-const isLoaded = ref(false)
+// ---------- 页面入场动画 ----------
+// 原来: onMounted 里手动 loginRef.value.classList.add('on-start', 'document-loaded')
+// 现在: 响应式 ref + :class 绑定, Vue 自动处理 DOM 同步, onBeforeUnmount 也不再需要
 
-// 独立控制焦点状态
-const usernameFocused = ref(false)
-const passwordFocused = ref(false)
-
-// 计算属性: 判断输入框是否应该处于 active 状态 (如果有焦点或者已经输入了内容)
-const isUsernameActive = computed(() => usernameFocused.value || userForm.username.length > 0)
-const isPasswordActive = computed(() => passwordFocused.value || userForm.password.length > 0)
+const isOnStart = ref(false)
+const isDocumentLoaded = ref(false)
 
 onMounted(() => {
-  // 直接更新响应式数据, 模板的 :class 会自动响应
-  isStarted.value = true
-  isLoaded.value = true
+  isOnStart.value = true
+  isDocumentLoaded.value = true
 })
 
-function submit() {
+// ---------- Placeholder 字母逐个动画 ----------
+
+function createLetters(text: string): LetterState[] {
+  return text.split('').map(char => ({ char, active: false }))
+}
+
+const usernameLetters = ref<LetterState[]>(createLetters('Username'))
+const passwordLetters = ref<LetterState[]>(createLetters('Password'))
+const usernameFilled = ref(false)
+const passwordFilled = ref(false)
+
+// 用版本号防止快速 focus/blur 时旧 setTimeout 回调干扰当前动画
+// (对应原来的 if (action && !contains || (!action && contains)) return 那段逻辑)
+const animationVersion: Record<InputField, number> = { username: 0, password: 0 }
+
+function animateLetters(field: InputField, activate: boolean): void {
+  const letters = field === 'username' ? usernameLetters : passwordLetters
+  const version = ++animationVersion[field]
+  const len = letters.value.length
+
+  // activate=true 正向, activate=false 反向 (对应原来的 lettersArray.reverse())
+  const indices = Array.from({ length: len }, (_, i) => (activate ? i : len - 1 - i))
+
+  indices.forEach((letterIdx, i) => {
+    setTimeout(() => {
+      // 版本号不匹配说明中途又触发了新动画, 丢弃这次回调
+      if (animationVersion[field] !== version) return
+      letters.value[letterIdx].active = activate
+    }, 50 * i)
+  })
+}
+
+function onInputFocus(field: InputField): void {
+  if (field === 'username') usernameFilled.value = true
+  else passwordFilled.value = true
+  animateLetters(field, true)
+}
+
+function onInputBlur(field: InputField): void {
+  const hasValue = field === 'username' ? !!userForm.username : !!userForm.password
+  if (hasValue) return  // 有内容时 blur 不收起 placeholder
+  if (field === 'username') usernameFilled.value = false
+  else passwordFilled.value = false
+  animateLetters(field, false)
+}
+
+// ---------- 登录提交 ----------
+// 原来: .then() 链式调用, 现在改为 async/await, 更直观
+
+async function submit(): Promise<void> {
   const { username, password } = userForm
-  if (!username || !password) {
-    ElMessage.warning('请输入用户名和密码')
-    return
+  const res = await ServerAPI.userLogin({
+    username,
+    password: md5(password)
+  }) as ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>
+
+  if (res.code === 1) {
+    UserStore.setUserInfo({ ...res.data?.userInfo, login: true })
+    ElMessage.success('登陆成功✌️')
+    router.push({ name: 'dashboard' })
+  } else {
+    ElMessage.error(res.msg || '登录失败')
   }
-  
-  ServerAPI.userLogin({ username, password: md5(password) })
-    .then((res: ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>) => {
-      if (res.code === 1) {
-        UserStore.setUserInfo({ ...res.data?.userInfo, login: true })
-        ElMessage.success('登录成功✌️')
-        router.push({ name: 'dashboard' })
-      } else {
-        ElMessage.error(res.msg || '登录失败')
-      }
-    })
 }
 </script>
 
 <style lang="scss" scoped>
-/* 样式部分几乎保持不变, 仅去除了 :deep(), 因为现在的 span 已经是模板内的静态节点了 */
 #loginWrapper {
   main {
     position: fixed;
@@ -457,15 +522,14 @@ function submit() {
     display: inline-block;
   }
 
-  /* 去掉了 :deep(), 因为现在的 DOM 节点在 Vue 模板里是可见的 */
-  .styled-input__placeholder-text .letter {
+  .styled-input__placeholder-text :deep(.letter) {
     display: inline-block;
     vertical-align: middle;
     position: relative;
     animation: letterAnimOut 0.25s ease forwards;
   }
 
-  .styled-input__placeholder-text .letter.active {
+  .styled-input__placeholder-text :deep(.letter.active) {
     animation: letterAnimIn 0.25s ease forwards;
   }
 

@@ -104,7 +104,8 @@ export interface MsgSendConfig {
 export interface CommentSendConfig {
   contentid: number
   nickname: string
-  content: string
+  content?: string
+  comment: string
 }
 
 export interface PageData {

@@ -187,6 +187,21 @@ async function delArticle(req, res, next) {
 
 async function editArticle(req, res, next) {
   try {
+    // 置顶数量限制：最多 5 篇
+    if (String(req.body.is_pinned) === '1') {
+      const [rows] = await query(
+        "SELECT COUNT(*) AS cnt FROM article WHERE is_pinned = '1' AND is_del = '0'"
+      );
+      // 如果当前文章本身未置顶，且已有 5 篇置顶，则拒绝
+      const [current] = await query(
+        "SELECT is_pinned FROM article WHERE id = ?", [req.body.id]
+      );
+      const alreadyPinned = current.length && String(current[0].is_pinned) === '1';
+      if (!alreadyPinned && rows[0].cnt >= 5) {
+        return fail(res, "置顶文章已达上限（5篇），请先取消其他置顶");
+      }
+    }
+
     await base.updateById("article", req.body.id, {
       title: req.body.title,
       category_id: req.body.category_id,
