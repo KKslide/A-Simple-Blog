@@ -1,18 +1,76 @@
 <template>
-  <div id="BMap" ref="mapRef"></div>
+  <div ref="mapRef" class="map-wrapper">
+    <div id="BMap"></div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted, onUnmounted, shallowRef } from 'vue'
+import { reactive, onMounted, onUnmounted, shallowRef, ref } from 'vue'
+import { ElLoading } from 'element-plus'
 import utils from '@/utils'
 import yuexiu from '@/assets/json/yuexiu.json'
+
+const BAIDU_MAP_API = import.meta.env.VITE_BAIDU_MAP_API
+const BAIDU_MAP_CLUSTER_CDN = import.meta.env.VITE_BAIDU_MAP_CLUSTER_CDN
+const CHANCE_JS = import.meta.env.VITE_CHANCE_JS
+
+/** 动态加载外部脚本 */
+function loadScript(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = src
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error(`Failed to load script: ${src}`))
+    document.head.appendChild(script)
+  })
+}
+
+/** 通过 callback 参数加载百度地图 API（API 异步初始化，onload 触发时 BMapGL 还不存在） */
+function loadBaiduMapAPI(src: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const cbName = '_baiduMapInit_' + Date.now()
+    const timer = setTimeout(() => reject(new Error('Baidu Map API init timeout')), 15000)
+    ;(window as any)[cbName] = () => {
+      delete (window as any)[cbName]
+      clearTimeout(timer)
+      resolve()
+    }
+    const url = src + (src.includes('?') ? '&' : '?') + 'callback=' + cbName
+    const script = document.createElement('script')
+    script.src = url
+    script.onerror = () => { clearTimeout(timer); reject(new Error('Baidu Map API load failed')) }
+    document.head.appendChild(script)
+  })
+}
+
+/** 轮询等待全局变量可用 */
+function waitForGlobal(key: string, timeout = 15000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if ((window as any)[key]) return resolve()
+    const start = Date.now()
+    const timer = setInterval(() => {
+      if ((window as any)[key]) {
+        clearInterval(timer)
+        resolve()
+      } else if (Date.now() - start > timeout) {
+        clearInterval(timer)
+        reject(new Error(`Timeout waiting for window.${key}`))
+      }
+    }, 50)
+  })
+}
 
 // 声明百度地图类型
 declare global {
   interface Window {
     BMapGL: typeof BMapGL
     Cluster: typeof Cluster
+    Chance: new () => Chance
   }
+}
+
+interface Chance {
+  floating(opts: { min: number; max: number; fixed: number }): number
 }
 
 declare class BMapGLMap {
@@ -106,7 +164,7 @@ interface FeatureCollection {
 
 /* ================= 基础数据 ================= */
 
-const chance = new Chance()
+let chance: Chance
 
 const polygon: Point[] = [
   { lng: 113.25284, lat: 23.139701 },
@@ -117,6 +175,7 @@ const polygon: Point[] = [
 
 /* ================= refs ================= */
 
+const mapRef = ref<HTMLElement | null>(null)
 const map = shallowRef<BMapGLMap | null>(null)
 const cluster = shallowRef<ClusterView | null>(null)
 
@@ -126,7 +185,7 @@ const handleResize = utils._debounce(resize, 200)
 
 const points = reactive<FeatureCollection>({
   type: 'FeatureCollection',
-  features: createRandomPoints(100)
+  features: []
 })
 
 /* ================= utils ================= */
@@ -146,8 +205,8 @@ function createRandomPoints(num: number): GeoFeature[] {
     geometry: {
       type: 'Point',
       coordinates: [
-        (chance as any).floating({ min: minLng, max: maxLng, fixed: 6 }),
-        (chance as any).floating({ min: minLat, max: maxLat, fixed: 6 })
+        chance.floating({ min: minLng, max: maxLng, fixed: 6 }),
+        chance.floating({ min: minLat, max: maxLat, fixed: 6 })
       ]
     }
   }))
@@ -190,24 +249,41 @@ function resize(): void {
   if (!map.value) return
 
   map.value.resize()
-  map.value.centerAndZoom(new BMapGL.Point(113.270842, 23.131681), 14)
+  map.value.centerAndZoom(new window.BMapGL.Point(113.270842, 23.131681), 14)
 }
 
 /* ================= lifecycle ================= */
 
-onMounted(() => {
-  map.value = new BMapGL.Map('BMap')
+onMounted(async () => {
+  const loading = ElLoading.service({ target: mapRef.value!, text: 'Loading...' })
+  try {
+    // 动态加载三个外部库（百度地图用 callback 机制，其余用 onload）
+    await Promise.all([
+      loadBaiduMapAPI(BAIDU_MAP_API),
+      loadScript(CHANCE_JS),
+    ])
+    await loadScript(BAIDU_MAP_CLUSTER_CDN)
+    await waitForGlobal('Cluster')
+  } catch (e) {
+    loading.close()
+    throw e
+  }
+
+  chance = new window.Chance()
+  points.features = createRandomPoints(100)
+
+  map.value = new window.BMapGL.Map('BMap')
 
   map.value.setMapStyleV2({
     styleId: '170d7f48abe3471089410f3de92624d9'
   })
 
-  map.value.centerAndZoom(new BMapGL.Point(113.270842, 23.131681), 14)
+  map.value.centerAndZoom(new window.BMapGL.Point(113.270842, 23.131681), 14)
   map.value.enableScrollWheelZoom(true)
   map.value.setMinZoom(2)
   map.value.setMaxZoom(20)
 
-  const fillLayer = new BMapGL.FillLayer({
+  const fillLayer = new window.BMapGL.FillLayer({
     crs: 'GCJ02',
     enablePicked: false,
     autoSelect: false,
@@ -221,17 +297,17 @@ onMounted(() => {
     }
   })
 
-  cluster.value = new Cluster.View(map.value, {
+  cluster.value = new window.Cluster.View(map.value, {
     clusterMinPoints: 2,
     clusterMaxZoom: 20,
     updateRealTime: true,
     fitViewOnClick: true,
     renderClusterStyle: {
-      type: Cluster.ClusterRender.DOM,
+      type: window.Cluster.ClusterRender.DOM,
       inject: createClusterDOM
     },
     renderSingleStyle: {
-      type: Cluster.ClusterRender.DOM,
+      type: window.Cluster.ClusterRender.DOM,
       inject: createSingleDOM
     }
   })
@@ -249,6 +325,7 @@ onMounted(() => {
         cluster.value.setData(points.features)
       }
 
+      loading.close()
       map.value.removeEventListener('tilesloaded', handleFirstRender)
       window.addEventListener('resize', handleResize)
     }
@@ -265,9 +342,15 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-#BMap {
+.map-wrapper {
   width: 100%;
   height: 80vh;
+  position: relative;
+}
+
+#BMap {
+  width: 100%;
+  height: 100%;
   overflow: hidden;
 }
 </style>
