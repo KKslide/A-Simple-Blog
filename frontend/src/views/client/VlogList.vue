@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-defineOptions({ name: 'VlogList' })
+defineOptions({ name: 'VlogListPage' })
 import { ref, watch, computed, onBeforeUnmount, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import ClientAPI from '@/api/client/index'
