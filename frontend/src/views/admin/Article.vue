@@ -1,5 +1,33 @@
 <template>
   <div id="articleManager">
+    <!-- 筛选表单 -->
+    <el-form :inline="true" :model="filterForm" size="small" class="filter-form">
+      <el-form-item label="标题">
+        <el-input v-model="filterForm.title" placeholder="搜索标题" clearable style="width: 180px" />
+      </el-form-item>
+      <el-form-item label="分类">
+        <el-select v-model="filterForm.category_id" placeholder="全部" clearable style="width: 130px">
+          <el-option v-for="v in categoryData" :key="v.id" :label="v.name" :value="v.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="置顶">
+        <el-select v-model="filterForm.is_pinned" placeholder="全部" clearable style="width: 100px">
+          <el-option label="是" value="1" />
+          <el-option label="否" value="0" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="显示">
+        <el-select v-model="filterForm.is_published" placeholder="全部" clearable style="width: 100px">
+          <el-option label="是" value="1" />
+          <el-option label="否" value="0" />
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="onFilter">查询</el-button>
+        <el-button @click="onResetFilter">重置</el-button>
+      </el-form-item>
+    </el-form>
+
     <el-table :data="articleData" :border="true" max-height="600" style="width: 100%">
       <el-table-column prop="id" label="文章ID" width="80" fixed="left"></el-table-column>
       <el-table-column prop="title" label="分文章标题" min-width="300"></el-table-column>
@@ -311,6 +339,13 @@ const total = ref(0)
 const curPage = ref(1)
 const pageSizes = [5, 10, 20, 50]
 
+const filterForm = reactive({
+  title: '',
+  category_id: null as number | null,
+  is_pinned: '' as string,
+  is_published: '' as string,
+})
+
 const articleFromRef = ref<FormInstance>()
 const articleFrom = reactive<ArticleFrom>({
   title: '',
@@ -469,7 +504,16 @@ function normalizeArticleRow(row: ArticleItem): ArticleItem {
 async function getArticleData() {
   ignoreTableSwitchChange.value = true
   try {
-    const params = { pageNo: curPage.value, pageSize: pageSize.value }
+    const params: Record<string, unknown> = {
+      pageNo: curPage.value,
+      pageSize: pageSize.value,
+    }
+    if (filterForm.title) params.title = filterForm.title
+    if (filterForm.category_id != null) params.category_id = filterForm.category_id
+    if (filterForm.is_pinned !== '') params.is_pinned = filterForm.is_pinned
+    if (filterForm.is_published !== '') params.is_published = filterForm.is_published
+    // 去掉值为 undefined 的参数
+    Object.keys(params).forEach(key => params[key] === undefined && delete params[key])
     await ServerAPI.getArticleList(params).then((res) => {
       const apiData = res.data || []
       total.value = apiData?.[0]?.total || 0
@@ -479,6 +523,20 @@ async function getArticleData() {
   } finally {
     ignoreTableSwitchChange.value = false
   }
+}
+
+function onFilter() {
+  curPage.value = 1
+  getArticleData()
+}
+
+function onResetFilter() {
+  filterForm.title = ''
+  filterForm.category_id = null
+  filterForm.is_pinned = ''
+  filterForm.is_published = ''
+  curPage.value = 1
+  getArticleData()
 }
 
 async function getCateData() {
@@ -560,6 +618,11 @@ onBeforeUnmount(() => {
 <style lang="scss" scoped>
 #articleManager {
   margin: 10px;
+
+  .filter-form {
+    padding: 12px 16px;
+    border-radius: 4px;
+  }
 
   .el-form-item.item_title {
     width: 30%;

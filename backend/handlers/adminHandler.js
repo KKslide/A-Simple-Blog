@@ -5,6 +5,7 @@ const commentRepo = require("../lib/repositories/commentRepository");
 const messageRepo = require("../lib/repositories/messageRepository");
 const dashboardService = require("../lib/services/dashboardService");
 const { success, fail } = require("../lib/response");
+const { query } = require("../db/index");
 
 async function doLogin(req, res, next) {
   try {
@@ -80,17 +81,52 @@ async function addCategory(req, res, next) {
   }
 }
 
+/**
+ * 软删除分类
+ * ⚠️ "Other" 是系统兜底分类，禁止删除 — 删除会导致文章归属、饼图统计等全部错乱
+ */
 async function delCategory(req, res, next) {
   try {
-    await base.softDelete("category", req.body.id);
+    const categoryId = req.body.id;
+    // 禁止删除 Other 兜底分类
+    const [targetRows] = await query(
+      "SELECT name FROM category WHERE id = ? LIMIT 1",
+      [categoryId]
+    );
+    if (targetRows.length && targetRows[0].name === "Other") {
+      return fail(res, "Other 是系统兜底分类，禁止删除!");
+    }
+    // 把该分类下的文章归到 Other 分类
+    const [otherRows] = await query(
+      "SELECT id FROM category WHERE name = 'Other' AND is_del = '0' LIMIT 1"
+    );
+    if (otherRows.length) {
+      await query(
+        "UPDATE article SET category_id = ? WHERE category_id = ?",
+        [otherRows[0].id, categoryId]
+      );
+    }
+    await base.softDelete("category", categoryId);
     return success(res, { msg: "删除成功" });
   } catch (err) {
     next(err);
   }
 }
 
+/**
+ * 编辑分类
+ * ⚠️ 禁止修改 "Other" 兜底分类的名称
+ */
 async function editCategory(req, res, next) {
   try {
+    // 禁止修改 Other 兜底分类
+    const [targetRows] = await query(
+      "SELECT name FROM category WHERE id = ? LIMIT 1",
+      [req.body.id]
+    );
+    if (targetRows.length && targetRows[0].name === "Other") {
+      return fail(res, "Other 是系统兜底分类，禁止编辑!");
+    }
     await base.updateById("category", req.body.id, {
       name: req.body.name,
       banner_url: req.body.banner_url,
@@ -107,9 +143,14 @@ async function getArticle(req, res, next) {
   try {
     const pageNo = Number(req.body.pageNo ?? req.query.pageNo ?? 1);
     const pageSize = Number(req.body.pageSize ?? req.query.pageSize ?? 10);
+    const src = { ...req.query, ...req.body };
     const data = await articleRepo.listAdmin({
       pageNo: pageNo > 0 ? pageNo : 1,
       pageSize: pageSize > 0 ? pageSize : 10,
+      title: src.title,
+      category_id: src.category_id,
+      is_pinned: src.is_pinned,
+      is_published: src.is_published,
     });
     return success(res, { data });
   } catch (err) {

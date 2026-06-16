@@ -22,6 +22,7 @@ class ServerAPI extends ApiHelper {
   addCategory(data: FormData | Record<string, unknown>) {
     return this.post<ApiResponse, FormData | Record<string, unknown>>('/admin/categories/add', data)
   }
+  // ⚠️ "Other" 是系统兜底分类, 后端会拦截禁止删除
   delCategory(data: Record<string, unknown>) {
     return this.post<ApiResponse, Record<string, unknown>>('/admin/categories/del', data)
   }

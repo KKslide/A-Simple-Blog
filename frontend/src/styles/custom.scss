@@ -152,7 +152,7 @@
 
 /* 管理端会挂 html.dark，需要同步覆盖暗色变量 */
 html.dark {
-  --el-color-primary: #909399;
+  --el-color-primary: #909399 !important;
 }
 
 /* 分页按钮文字/hover 颜色跟随 Element Plus 主色 */

@@ -32,10 +32,17 @@ CREATE TABLE `category` (
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文章分类表';
 
+-- =====================================================================
+-- ⚠️ 重要: "Other" 分类是系统兜底/默认分类, 绝对不能删除!
+--   - 删除分类时, 被删分类下的文章会自动归类到 Other
+--   - 饼图/统计等均依赖此分类存在
+--   - 如果误删 Other, 前后端逻辑、文章归属、数据展示都会出错
+-- =====================================================================
+
 -- 初始化默认分类
 BEGIN;
-INSERT INTO `category` (`id`, `name`, `created_at`, `updated_at`, `banner_url`, `sort_order`, `show_type`, `is_del`) 
-VALUES (1, '默认分类', NOW(), NOW(), 'https://jpuboss.janime.cn/20260416fp9VMYNRXmHmkR0MaBlFWCkgOSIyqDWm', 0, 'card', 0);
+INSERT INTO `category` (`id`, `name`, `created_at`, `updated_at`, `banner_url`, `sort_order`, `show_type`, `is_del`)
+VALUES (3, 'Other', NOW(), NOW(), 'https://video.kangyouknowwho.space/space.jpg', 0, 'card', 0);
 COMMIT;
 
 -- ----------------------------

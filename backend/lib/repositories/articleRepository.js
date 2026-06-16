@@ -2,26 +2,50 @@ const { query } = require("../../db/index");
 const base = require("./baseRepository");
 
 /** 管理端文章列表（含评论数、分类名） */
-async function listAdmin({ pageNo = 1, pageSize = 10 } = {}) {
+async function listAdmin({ pageNo = 1, pageSize = 10, title, category_id, is_pinned, is_published } = {}) {
   const pNo = base.toPositiveInt(pageNo, 1);
   const pSize = base.toPositiveInt(pageSize, 10);
   const offset = (pNo - 1) * pSize;
+
+  // 动态筛选条件
+  const conditions = [];
+  const params = [];
+
+  if (title != null && String(title).trim() !== "") {
+    conditions.push("a.title LIKE ?");
+    params.push(`%${String(title).trim()}%`);
+  }
+  if (category_id != null && !isNaN(category_id) && Number(category_id) !== 0) {
+    conditions.push("a.category_id = ?");
+    params.push(Number(category_id));
+  }
+  if (is_pinned != null && is_pinned !== "") {
+    conditions.push("a.is_pinned = ?");
+    params.push(String(is_pinned));
+  }
+  if (is_published != null && is_published !== "") {
+    conditions.push("a.is_published = ?");
+    params.push(String(is_published));
+  }
+
+  const whereExtra = conditions.length ? " AND " + conditions.join(" AND ") : "";
+
   const [rows] = await query(
     `
     SELECT
-      (SELECT COUNT(*) FROM article) AS total,
+      (SELECT COUNT(*) FROM article a2 WHERE a2.is_del = '0'${whereExtra.replace(/\ba\./g, "a2.")}) AS total,
       COUNT(cm.article_id) AS comment_num,
       cate.name AS cate_name,
       a.*
     FROM article a
     LEFT JOIN category cate ON a.category_id = cate.id
     LEFT JOIN comment cm ON a.id = cm.article_id AND cm.is_del = '0'
-    WHERE a.is_del = '0'
+    WHERE a.is_del = '0'${whereExtra}
     GROUP BY a.id
     ORDER BY a.created_at DESC
     LIMIT ? OFFSET ?
     `,
-    [pSize, offset]
+    [...params, ...params, pSize, offset]
   );
   return rows;
 }

@@ -1,28 +1,32 @@
-/** 管理端仪表盘统计数据 */
+/**
+ * 管理端仪表盘统计数据
+ * 注意: 饼图数据从 category 表动态查询, 过滤软删除分类
+ * ⚠️ "Other" 是系统兜底分类, 绝对不能删除 (见 adminHandler.delCategory)
+ */
 const { query } = require("../../db/index");
 const visitService = require("./visitService");
 
 async function getDashboardData() {
-  const statsSql = `
-    SELECT
-      (SELECT COUNT(*) FROM users) AS userNum,
-      COUNT(a.id) AS arcticleNum,
-      COUNT(CASE WHEN c.name = 'Fun' THEN 1 ELSE NULL END) AS Fun,
-      COUNT(CASE WHEN c.name = 'Blog' THEN 1 ELSE NULL END) AS Blog,
-      COUNT(CASE WHEN c.name = 'Vlog' THEN 1 ELSE NULL END) AS Vlog,
-      COUNT(CASE WHEN c.name = 'Code' THEN 1 ELSE NULL END) AS Code,
-      COUNT(CASE WHEN c.name = 'Other' THEN 1 ELSE NULL END) AS Other
-    FROM article a
-    LEFT JOIN category c ON a.category_id = c.id
+  const statsSql = `SELECT (SELECT COUNT(*) FROM users) AS userNum, COUNT(a.id) AS arcticleNum FROM article a`;
+
+  const pieSql = `
+    SELECT c.name, COUNT(a.id) AS value
+    FROM category c
+    LEFT JOIN article a ON a.category_id = c.id
+    WHERE c.is_del = '0'
+    GROUP BY c.id, c.name
+    ORDER BY c.id
   `;
 
-  const [statsResult, siteVisit, timelineRows] = await Promise.all([
+  const [statsResult, pieResult, siteVisit, timelineRows] = await Promise.all([
     query(statsSql),
+    query(pieSql),
     visitService.getSiteVisitStats(),
     visitService.getHourlyPvLast24h(),
   ]);
 
   const stats = statsResult[0][0];
+  const pieRows = pieResult[0];
   const resData = {
     tag_list: [
       { tag: "总浏览量(PV)", value: siteVisit.pvTotal },
@@ -31,13 +35,7 @@ async function getDashboardData() {
       { tag: "用户", value: stats.userNum },
       { tag: "文章数", value: stats.arcticleNum },
     ],
-    pie_chart_data: [
-      { name: "Fun", value: stats.Fun },
-      { name: "Blog", value: stats.Blog },
-      { name: "Vlog", value: stats.Vlog },
-      { name: "Code", value: stats.Code },
-      { name: "Other", value: stats.Other },
-    ],
+    pie_chart_data: pieRows.map((r) => ({ name: r.name, value: Number(r.value) })),
   };
 
   const lineChartDataMap = new Map();

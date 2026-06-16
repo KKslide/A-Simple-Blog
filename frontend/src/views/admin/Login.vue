@@ -1,5 +1,5 @@
 <template>
-  <div id="loginWrapper" ref="loginRef">
+  <div id="loginWrapper" :class="{ 'on-start': isStarted, 'document-loaded': isLoaded }">
     <main>
       <form class="form" @submit.prevent="submit">
         <div class="form__cover"></div>
@@ -20,31 +20,58 @@
         </div>
         <div class="form__content">
           <h1 class="form__content_h1">Login</h1>
-          <div class="styled-input">
+          
+          <div class="styled-input" :class="{ filled: isUsernameActive }">
             <input
               type="text"
               class="styled-input__input"
               name="username"
               v-model="userForm.username"
+              @focus="usernameFocused = true"
+              @blur="usernameFocused = false"
             />
             <div class="styled-input__placeholder">
-              <span class="styled-input__placeholder-text">Username</span>
+              <span class="styled-input__placeholder-text">
+                <span
+                  v-for="(char, i) in 'Username'"
+                  :key="`user-${i}`"
+                  class="letter"
+                  :class="{ active: isUsernameActive }"
+                  :style="{ animationDelay: `${isUsernameActive ? i * 50 : ('Username'.length - 1 - i) * 50}ms` }"
+                >
+                  {{ char }}
+                </span>
+              </span>
             </div>
             <div class="styled-input__circle"></div>
           </div>
-          <div class="styled-input">
+
+          <div class="styled-input" :class="{ filled: isPasswordActive }">
             <input
               type="password"
               class="styled-input__input"
               name="password"
               v-model="userForm.password"
-              @keydown="typing"
+              @focus="passwordFocused = true"
+              @blur="passwordFocused = false"
+              @keyup.enter="submit" 
             />
             <div class="styled-input__placeholder">
-              <span class="styled-input__placeholder-text">Password</span>
+              <span class="styled-input__placeholder-text">
+                <span
+                  v-for="(char, i) in 'Password'"
+                  :key="`pass-${i}`"
+                  class="letter"
+                  :class="{ active: isPasswordActive }"
+                  :style="{ animationDelay: `${isPasswordActive ? i * 50 : ('Password'.length - 1 - i) * 50}ms` }"
+                >
+                  {{ char }}
+                </span>
+              </span>
             </div>
             <div class="styled-input__circle"></div>
           </div>
+
           <button type="button" class="styled-button" @click="submit">
             <span class="styled-button__real-text-holder">
               <span class="styled-button__real-text">Login</span>
@@ -60,6 +87,7 @@
               </span>
             </span>
           </button>
+          
           <button type="button" class="styled-button" @click="router.push({ name: 'home' })">
             <span class="styled-button__real-text-holder">
               <span class="styled-button__real-text">Home Page</span>
@@ -84,7 +112,7 @@
 <script setup lang="ts">
 import { md5 } from 'js-md5'
 import { useRouter } from 'vue-router'
-import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import ServerAPI from '@/api/server'
 import { ElMessage } from 'element-plus'
 import type { ApiResponse } from '@/types/api'
@@ -96,90 +124,53 @@ interface UserForm {
 }
 
 const UserStore = useUserStore()
+const router = useRouter()
+
 const userForm = reactive<UserForm>({
   username: '',
   password: ''
 })
 
-const loginRef = ref<HTMLElement | null>(null)
-const router = useRouter()
+// 控制页面初始动画状态
+const isStarted = ref(false)
+const isLoaded = ref(false)
+
+// 独立控制焦点状态
+const usernameFocused = ref(false)
+const passwordFocused = ref(false)
+
+// 计算属性: 判断输入框是否应该处于 active 状态 (如果有焦点或者已经输入了内容)
+const isUsernameActive = computed(() => usernameFocused.value || userForm.username.length > 0)
+const isPasswordActive = computed(() => passwordFocused.value || userForm.password.length > 0)
 
 onMounted(() => {
-  if (!loginRef.value) return
-
-  const placeholders = loginRef.value.querySelectorAll('.styled-input__placeholder-text')
-  const inputs = loginRef.value.querySelectorAll('.styled-input__input')
-
-  function placeholderAnimationIn(parent: Element, action: boolean) {
-    const act = action ? 'add' : 'remove'
-    const letters = parent.querySelectorAll('.letter')
-    const lettersArray = Array.from(letters)
-    if (!action) lettersArray.reverse()
-
-    lettersArray.forEach((el, i) => {
-      setTimeout(() => {
-        const contains = parent.classList.contains('filled')
-        if (action && !contains || (!action && contains)) return
-        el.classList[act]('active')
-      }, 50 * i)
-    })
-  }
-
-  placeholders.forEach((el) => {
-    const value = el.textContent || ''
-    let html = ''
-    for (const w of value) {
-      const char = w || '&nbsp;'
-      html += `<span class="letter">${char}</span>`
-    }
-    el.innerHTML = html
-  })
-
-  inputs.forEach((el) => {
-    const parent = el.parentNode as Element
-    el.addEventListener('focus', () => {
-      parent.classList.add('filled')
-      placeholderAnimationIn(parent, true)
-    }, false)
-    el.addEventListener('blur', () => {
-      if ((el as HTMLInputElement).value.length) return
-      parent.classList.remove('filled')
-      placeholderAnimationIn(parent, false)
-    }, false)
-  })
-
-  loginRef.value.classList.add('on-start')
-  loginRef.value.classList.add('document-loaded')
-})
-
-onBeforeUnmount(() => {
-  if (loginRef.value) {
-  loginRef.value.classList.remove('on-start', 'document-loaded')
-  }
+  // 直接更新响应式数据, 模板的 :class 会自动响应
+  isStarted.value = true
+  isLoaded.value = true
 })
 
 function submit() {
   const { username, password } = userForm
+  if (!username || !password) {
+    ElMessage.warning('请输入用户名和密码')
+    return
+  }
+  
   ServerAPI.userLogin({ username, password: md5(password) })
     .then((res: ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>) => {
       if (res.code === 1) {
         UserStore.setUserInfo({ ...res.data?.userInfo, login: true })
-        ElMessage.success('登陆成功✌️')
+        ElMessage.success('登录成功✌️')
         router.push({ name: 'dashboard' })
       } else {
         ElMessage.error(res.msg || '登录失败')
       }
     })
 }
-
-function typing(e: KeyboardEvent) {
-  if (e.keyCode === 13) {
-    submit()
-  }
-}
 </script>
 
 <style lang="scss" scoped>
+/* 样式部分几乎保持不变, 仅去除了 :deep(), 因为现在的 span 已经是模板内的静态节点了 */
 #loginWrapper {
   main {
     position: fixed;
@@ -471,14 +462,15 @@ function typing(e: KeyboardEvent) {
     display: inline-block;
   }
 
-  .styled-input__placeholder-text :deep(.letter) {
+  /* 去掉了 :deep(), 因为现在的 DOM 节点在 Vue 模板里是可见的 */
+  .styled-input__placeholder-text .letter {
     display: inline-block;
     vertical-align: middle;
     position: relative;
     animation: letterAnimOut 0.25s ease forwards;
   }
 
-  .styled-input__placeholder-text :deep(.letter.active) {
+  .styled-input__placeholder-text .letter.active {
     animation: letterAnimIn 0.25s ease forwards;
   }
 

@@ -41,13 +41,24 @@
       </el-table-column>
       <el-table-column label="操作" min-width="150">
         <template #default="scope">
-          <el-button size="small" @click="edit(scope.row)">编辑</el-button>
-          <el-popconfirm width="unset" confirm-button-text="确认" cancel-button-text="取消" cancel-button-type="info"
-            placement="left-start" :title="`永久删除分类 ${scope.row.name} , 是否继续?`" @confirm="del(scope.row.id)">
-            <template #reference>
-              <el-button size="small" type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
+          <!-- Other 是系统兜底分类，禁止编辑和删除 -->
+          <template v-if="scope.row.name === 'Other'">
+            <el-tooltip content="Other 是系统兜底分类，禁止编辑" placement="top">
+              <el-button size="small" disabled>编辑</el-button>
+            </el-tooltip>
+            <el-tooltip content="Other 是系统兜底分类，禁止删除" placement="top">
+              <el-button size="small" type="danger" disabled>删除</el-button>
+            </el-tooltip>
+          </template>
+          <template v-else>
+            <el-button size="small" @click="edit(scope.row)">编辑</el-button>
+            <el-popconfirm width="unset" confirm-button-text="确认" cancel-button-text="取消" cancel-button-type="info"
+              placement="left-start" :title="`永久删除分类 ${scope.row.name} , 是否继续?`" @confirm="del(scope.row.id)">
+              <template #reference>
+                <el-button size="small" type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
         </template>
       </el-table-column>
     </el-table>
