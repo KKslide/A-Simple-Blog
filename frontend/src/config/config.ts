@@ -138,4 +138,17 @@ const portfoliosList = [
   }
 ]
 
-export { plyrOptions, hljs, portfoliosList, dayjs }
+// 图片上传配置
+const imageAcceptTypes = 'image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/avif,image/tiff'
+const imageAcceptExtensions = '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.avif,.tiff,.tif'
+
+/** 校验文件是否为合法图片类型 */
+function isValidImageFile(file: File): boolean {
+  // 优先通过 MIME type 判断
+  if (imageAcceptTypes.split(',').includes(file.type)) return true
+  // 回退：通过扩展名判断
+  const ext = '.' + file.name.split('.').pop()?.toLowerCase()
+  return imageAcceptExtensions.split(',').includes(ext)
+}
+
+export { plyrOptions, hljs, portfoliosList, dayjs, imageAcceptTypes, imageAcceptExtensions, isValidImageFile }

@@ -44,15 +44,9 @@ async function Comment(req, res, next) {
     const content = (req.body.comment || req.query.comment || "").toString().trim();
 
     // 输入校验
-    if (!content) {
-      return res.status(400).json({ code: 0, msg: "评论内容不能为空" });
-    }
-    if (content.length > 500) {
-      return res.status(400).json({ code: 0, msg: "评论内容不能超过500字" });
-    }
-    if (nickname.length > 50) {
-      return res.status(400).json({ code: 0, msg: "昵称不能超过50字" });
-    }
+    if (!content) return fail(res, "评论内容不能为空");
+    if (content.length > 500) return fail(res, "评论内容不能超过500字");
+    if (nickname.length > 50) return fail(res, "昵称不能超过50字");
 
     await base.insert("comment", {
       article_id: articleId,
@@ -82,18 +76,10 @@ async function leaveMessage(req, res, next) {
     const ip = util.getClientIp(req);
 
     // 输入校验
-    if (!nickname) {
-      return res.status(400).json({ code: 0, msg: "昵称不能为空" });
-    }
-    if (!content) {
-      return res.status(400).json({ code: 0, msg: "留言内容不能为空" });
-    }
-    if (nickname.length > 50) {
-      return res.status(400).json({ code: 0, msg: "昵称不能超过50字" });
-    }
-    if (content.length > 500) {
-      return res.status(400).json({ code: 0, msg: "留言内容不能超过500字" });
-    }
+    if (!nickname) return fail(res, "昵称不能为空");
+    if (!content) return fail(res, "留言内容不能为空");
+    if (nickname.length > 50) return fail(res, "昵称不能超过50字");
+    if (content.length > 500) return fail(res, "留言内容不能超过500字");
 
     await base.insert("messages", {
       nickname,
@@ -123,8 +109,8 @@ async function recordArticleView(req, res, next) {
     const result = await articleViewService.recordArticleView(articleId, ip);
     return success(res, { msg: "成功", data: result });
   } catch (err) {
-    if (err.status === 400) return res.status(400).json({ code: 0, msg: err.message });
-    if (err.status === 404) return res.status(404).json({ code: 0, msg: err.message });
+    if (err.status === 400) return fail(res, err.message);
+    if (err.status === 404) return fail(res, err.message);
     next(err);
   }
 }

@@ -187,7 +187,7 @@ function sendComment(data: { comment: string; name: string }) {
     if (valid) {
       const { id: contentid } = contentObj.value as ContentConfig
       const { comment, name: visitor } = data
-      const params = { contentid, content: comment ?? '', nickname: visitor ?? '' }
+      const params = { contentid, comment: comment ?? '', nickname: visitor ?? '' }
       ClientAPI.postBlogComment(params)
         .then(() => {
           if (Array.isArray(contentObj.value.comment)) {

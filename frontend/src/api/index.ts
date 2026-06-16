@@ -1,8 +1,8 @@
 interface ErrorResponse {
-  message?: string
   code?: number
+  msg?: string
+  message?: string
   errors?: string[]
-  [key: string]: unknown  // 允许其他属性
 }
 
 import axios, { AxiosHeaders, type AxiosResponse, type AxiosInstance, type InternalAxiosRequestConfig, type AxiosError } from 'axios'
@@ -17,7 +17,6 @@ let loadingInstance: ReturnType<typeof ElLoading.service> | null = null
  * loadingOpt 的类型也用 Parameters 推断，参数索引 0 即为 options 类型
  */
 const loadingOpt: Parameters<typeof ElLoading.service>[0] = { fullscreen: true }
-let canRequest: boolean = true
 
 export default class Request {
   private static _instance?: Request;
@@ -70,69 +69,58 @@ export default class Request {
     )
 
     /**
-     * 请求接口后返回的拦截器
+     * 响应拦截器
+     *
+     * 后端统一响应格式:
+     *   成功: { code: 1, msg: "成功", data?: ... }
+     *   失败: { code: 0, msg: "错误提示" }
+     *
+     * HTTP 状态码:
+     *   200 — 正常（业务成功或业务失败）
+     *   401 — 未登录
+     *   404 — 路由不存在
+     *   500 — 服务器异常
      */
     this.service.interceptors.response.use(
       (res: AxiosResponse): AxiosResponse | Promise<never> => {
-        let { status, data } = res
-        const replaceURL = <T>(val: T): T => {
-          // todo 把这一段 127... 给干掉
-          if (typeof val === 'string' && val.includes('127.0.0.1')) {
-            return val.replace('127.0.0.1', window.location.hostname) as T
-          } else if (Array.isArray(val)) {
-            return val.map(replaceURL) as T
-          } else if (typeof val === 'object' && val !== null) {
-            const result: Record<string, unknown> = {}
-            for (const key in val) {
-              result[key] = replaceURL((val as Record<string, unknown>)[key])
-            }
-            return result as T
-          }
-          return val
-        }
-        data = replaceURL(data) // 替换开发时的本地回环地址字符串
-
+        const { data } = res
         loadingInstance?.close()
 
-        if (status === 200 && data.successed) {
-          canRequest = true
+        // code === 1 表示业务成功，返回 data
+        if (data?.code === 1) {
           return data
         }
-        if (
-          status === 200 &&
-          data.successed == undefined &&
-          data.status != 404 &&
-          (typeof data == 'object' || Array.isArray(data))
-        ) {
-          return data
+
+        // code === 0 表示业务失败，弹出错误提示并 reject
+        if (data?.code === 0) {
+          ElNotification({ title: '提示', message: data.msg || '操作失败', type: 'warning', duration: 3000 })
+          return Promise.reject(data)
         }
-        const { errorcode } = data
-        // 接口返回的错误信息为token失效或登录状态失效
-        if (
-          errorcode == 10000 ||
-          errorcode == 9999 ||
-          errorcode == 9998 ||
-          errorcode == 9100 ||
-          errorcode == 10001
-        ) {
-          if (!canRequest) return Promise.reject(data)
-        }
-        return Promise.reject(data)
+
+        // 其他情况（如直接返回数组/对象的旧接口）原样返回
+        return data
       },
       (error: AxiosError<ErrorResponse>) => {
         loadingInstance?.close()
-        if (error.response && error.response.status === 401) {
+        const status = error.response?.status
+        const msg = error.response?.data?.msg || error.response?.data?.message
+
+        if (status === 401) {
           ElNotification({
-            title: 'Error',
-            message: error?.response?.data?.message || '未授权',
+            title: '登录过期',
+            message: msg || '未登录或登录已过期，请重新登录',
             type: 'error',
             duration: 3000,
             onClose: () => {
-              console.log('关闭了~~~')
               window.location.pathname = '/server/login'
             }
           })
+        } else if (status === 404) {
+          ElNotification({ title: '错误', message: '请求的资源不存在', type: 'error', duration: 3000 })
+        } else if (status === 500) {
+          ElNotification({ title: '错误', message: '服务器内部错误', type: 'error', duration: 3000 })
         }
+
         return Promise.reject(error.response)
       }
     )

@@ -82,12 +82,8 @@ import { useRoute, useRouter } from 'vue-router'
 import ServerAPI from '@/api/server'
 import { md5 } from 'js-md5'
 import { ElMessage, ElNotification, type FormInstance, type FormRules } from 'element-plus'
+import type { UserForm } from '@/types/api'
 import { useUserStore } from '@/stores/userStore'
-
-interface UserForm {
-  username: string
-  password: string
-}
 
 const UserStore = useUserStore()
 const route = useRoute()

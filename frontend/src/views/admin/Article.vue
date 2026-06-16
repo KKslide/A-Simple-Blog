@@ -54,28 +54,28 @@
       <el-table-column prop="is_pinned" label="置顶" min-width="100">
         <template #default="scope">
           <el-switch
-            v-model="scope.row.is_pinned"
+            :model-value="scope.row.is_pinned"
             inline-prompt
             style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
             active-value="1"
             inactive-value="0"
             active-text="是"
             inactive-text="否"
-            @change="toggleSomeKey(scope.row)"
+            @change="(val: string) => toggleSomeKey(scope.row, 'is_pinned', val)"
           />
         </template>
       </el-table-column>
       <el-table-column prop="is_published" label="显示" min-width="100">
         <template #default="scope">
           <el-switch
-            v-model="scope.row.is_published"
+            :model-value="scope.row.is_published"
             inline-prompt
             style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
             active-value="1"
             inactive-value="0"
             active-text="是"
             inactive-text="否"
-            @change="toggleSomeKey(scope.row)"
+            @change="(val: string) => toggleSomeKey(scope.row, 'is_published', val)"
           />
         </template>
       </el-table-column>
@@ -124,7 +124,7 @@
     <!-- drawer弹窗 -->
     <el-drawer
       :title="drawerTitle"
-      :before-close="closeHandler"
+      :before-close="confirmClose"
       v-model="drawerVisible"
       :destroy-on-close="true"
       direction="btt"
@@ -186,6 +186,7 @@
               list-type="picture-card"
               :auto-upload="false"
               :show-file-list="false"
+              :accept="imageAcceptTypes"
               :on-change="handleCrop"
             >
               <template #default>
@@ -200,7 +201,7 @@
               </template>
             </el-upload>
             <div v-if="articleFrom.cover_url" class="article_minpic_previewer">
-              <el-icon size="20"><zoom-in /></el-icon>
+              <el-icon size="20" @click="showViewer = true"><zoom-in /></el-icon>
               <el-icon size="20" @click="articleFrom.cover_url = ''"><Delete /></el-icon>
             </div>
           </el-form-item>
@@ -227,7 +228,7 @@
         </el-form>
       </template>
       <template #footer>
-        <el-button @click="closeHandler">关 闭</el-button>
+        <el-button @click="confirmClose()">关 闭</el-button>
         <el-button type="primary" @click="saveHandler">保 存</el-button>
       </template>
     </el-drawer>
@@ -236,6 +237,13 @@
     <el-dialog v-if="showCropper" v-model="showCropper" draggable width="800">
       <Cropper :img-file="cropperFile || ''" @cropperDone="uploadHandler" @cropperCancel="closeCropper" />
     </el-dialog>
+
+    <!-- 图片预览 -->
+    <ElImageViewer
+      v-if="showViewer"
+      :url-list="[previewUrl]"
+      @close="showViewer = false"
+    />
 
     <!-- comments -->
     <el-dialog
@@ -288,7 +296,8 @@ import { ref, reactive, shallowRef, computed, onMounted, onBeforeUnmount, nextTi
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor } from '@wangeditor/editor'
 import type { ArticleItem, CategoryItem, CommentItem } from '@/types/api'
-import { ElMessage, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
+import { ElMessage, ElMessageBox, ElImageViewer, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
+import { imageAcceptTypes, isValidImageFile } from '@/config/config'
 import Cropper from './Widgets/Cropper.vue'
 import '@wangeditor/editor/dist/css/style.css'
 
@@ -315,11 +324,15 @@ interface ArticleFrom {
 const handleCreated = (editor: IDomEditor) => {
   editorRef.value = editor
   editor.getMenuConfig('uploadImage').customUpload = (file: File, insertFn: (...args: unknown[]) => void) => {
+    if (!isValidImageFile(file)) {
+      ElMessage.warning('只能上传图片文件')
+      return
+    }
     const tempForm = new FormData()
     tempForm.append('file', file)
     ServerAPI.picUpload(tempForm).then((res) => {
-      if (res?.code === 1) {
-        insertFn(BaseUrl + res.imageUrl)
+      if (res?.code === 1 && res.data?.imageUrl) {
+        insertFn(BaseUrl + res.data.imageUrl)
       } else {
         alert('上传失败!')
       }
@@ -328,8 +341,7 @@ const handleCreated = (editor: IDomEditor) => {
 }
 
 const handleChange = (editor: IDomEditor) => {
-  const html = editor.getHtml()
-  articleFrom.content = html
+  articleFrom.content = editor.getHtml() as string
 }
 
 const articleData = ref<ArticleItem[]>([])
@@ -371,6 +383,13 @@ const articleFromRules = reactive<FormRules<ArticleFrom>>({
 
 const showCropper = ref(false)
 const cropperFile = ref<string | null>(null)
+
+const showViewer = ref(false)
+const previewUrl = computed(() =>
+  articleFrom.cover_url?.startsWith('http')
+    ? articleFrom.cover_url
+    : BaseUrl + articleFrom.cover_url
+)
 
 /* **********drawer配置********** */
 const drawerTitle = computed(() => {
@@ -432,12 +451,16 @@ async function edit(row: ArticleItem) {
   editorRef.value?.setHtml(row.content)
 }
 
-async function toggleSomeKey(row: ArticleItem) {
+async function toggleSomeKey(row: ArticleItem, key: 'is_pinned' | 'is_published', newVal: string) {
   if (ignoreTableSwitchChange.value) return
+  const oldVal = row[key]
+  row[key] = newVal // 乐观更新 UI
   Object.assign(articleFrom, row)
-  const res = await ServerAPI.editArticle(articleFrom)
-  if (res.code === 1) {
-    ElMessage.success('修改成功✌️')
+  try {
+    const res = await ServerAPI.editArticle(articleFrom)
+    if (res.code === 1) ElMessage.success('修改成功✌️')
+  } catch {
+    row[key] = oldVal // 失败回滚
   }
 }
 
@@ -451,6 +474,10 @@ function del(id: number) {
 }
 
 function handleCrop(files: UploadFile) {
+  if (files.raw && !isValidImageFile(files.raw)) {
+    ElMessage.warning('只能上传图片文件')
+    return
+  }
   // 直接使用本地预览
   if (files.url) {
     cropperFile.value = files.url
@@ -474,9 +501,10 @@ function uploadHandler(file: Blob) {
   formData.append('file', uploadFile)
   ServerAPI.picUpload(formData)
     .then((res) => {
-      if (res.code === 1 && res.imageUrl) {
+      const url = res.data?.imageUrl
+      if (res.code === 1 && url) {
         ElMessage.success('封面上传成功~')
-        articleFrom.cover_url = res.imageUrl
+        articleFrom.cover_url = url
         closeCropper()
       }
     })
@@ -583,14 +611,14 @@ function saveHandler() {
     }
     if (res.code === 1) {
       ElMessage.success(successMsg[drawerType.value])
-      closeHandler()
+      drawerVisible.value = false
+      resetArticleForm()
       getArticleData()
     }
   })
 }
 
-function closeHandler() {
-  drawerVisible.value = false
+function resetArticleForm() {
   Object.assign(articleFrom, {
     title: '',
     category_id: null,
@@ -601,6 +629,17 @@ function closeHandler() {
     video_url: '',
     cover_url: ''
   })
+}
+
+function confirmClose(done?: () => void) {
+  ElMessageBox.confirm('内容尚未保存，确定要关闭吗？', '温馨提示', {
+    confirmButtonText: '狠心离开',
+    cancelButtonText: '继续编辑',
+    type: 'warning',
+  }).then(() => {
+    done ? done() : (drawerVisible.value = false)
+    resetArticleForm()
+  }).catch(() => {})
 }
 
 onMounted(async () => {

@@ -87,6 +87,7 @@
               :auto-upload="false"
               :limit="1"
               :show-file-list="false"
+              :accept="imageAcceptTypes"
               :on-change="uploadHandler"
             >
               <template #default>
@@ -139,6 +140,7 @@ import ServerAPI from '@/api/server'
 import { ref, reactive, onMounted } from 'vue'
 import type { UploadResponse } from '@/types/api'
 import { ElMessage, type UploadFile } from 'element-plus'
+import { imageAcceptTypes, isValidImageFile } from '@/config/config'
 
 const BaseUrl = import.meta.env.VITE_MEDIA_URL
 
@@ -264,14 +266,18 @@ function uploadHandler(file: UploadFile) {
     ElMessage.error('请选择图片文件')
     return
   }
+  if (!isValidImageFile(file.raw)) {
+    ElMessage.warning('只能上传图片文件')
+    return
+  }
 
   const ImgForm = new FormData()
   ImgForm.append('file', file.raw)
 
   ServerAPI.picUpload(ImgForm)
     .then((res: UploadResponse) => {
-      if (res.code === 1 && res.imageUrl) {
-        categoryDetail.banner_url = res.imageUrl
+      if (res.code === 1 && res.data?.imageUrl) {
+        categoryDetail.banner_url = res.data.imageUrl
         tempUrl.value = (URL.createObjectURL(file.raw as File) || file.url) as string
         ElMessage.success('图片已上传')
       } else {

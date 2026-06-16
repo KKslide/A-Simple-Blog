@@ -1,15 +1,20 @@
+/**
+ * 统一接口响应格式
+ * 成功: { code: 1, msg: "成功", data?: T }
+ * 失败: { code: 0, msg: "错误提示" }
+ */
 export interface ApiResponse<T = unknown> {
   code: number
-  message?: string
   msg?: string
   data?: T
-  [key: string]: unknown
 }
 
 export interface UploadResponse {
   code: number
-  imageUrl?: string
-  [key: string]: unknown
+  msg?: string
+  data?: {
+    imageUrl?: string
+  }
 }
 
 export interface ArticleItem {
@@ -95,4 +100,9 @@ export interface LoginResponse {
       is_admin: number
     }
   }
+}
+
+export interface UserForm {
+  username: string
+  password: string
 }
