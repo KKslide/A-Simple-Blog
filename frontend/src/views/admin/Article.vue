@@ -455,9 +455,8 @@ async function toggleSomeKey(row: ArticleItem, key: 'is_pinned' | 'is_published'
   if (ignoreTableSwitchChange.value) return
   const oldVal = row[key]
   row[key] = newVal // 乐观更新 UI
-  Object.assign(articleFrom, row)
   try {
-    const res = await ServerAPI.editArticle(articleFrom)
+    const res = await ServerAPI.editArticle({ ...row })
     if (res.code === 1) ElMessage.success('修改成功✌️')
   } catch {
     row[key] = oldVal // 失败回滚
@@ -585,6 +584,7 @@ function pageSizeChange() {
 }
 
 function openEditor() {
+  resetArticleForm()
   drawerVisible.value = true
 }
 

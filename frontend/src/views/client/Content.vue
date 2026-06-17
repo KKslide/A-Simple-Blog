@@ -314,6 +314,29 @@ watch(
     contentRef.value
       ?.querySelectorAll('.content_html pre code')
       .forEach((el) => hljs.highlightElement(el as HTMLElement))
+    // 为代码块添加复制按钮
+    contentRef.value
+      ?.querySelectorAll('.content_html pre')
+      .forEach((pre) => {
+        if (pre.querySelector('.copy-btn')) return
+        const btn = document.createElement('span')
+        btn.className = 'copy-btn'
+        btn.innerHTML = '<svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM638.7 787.3c-2 2-4.5 3.5-7.1 4.5-1.4.6-2.8.9-4.3 1H416V664h222.7c1.5 0 2.9-.3 4.3-1 2.6-1 5.1-2.5 7.1-4.5l113.3-113.3c3.9-3.9 3.9-10.2 0-14.1l-113.3-113.3c-3.9-3.9-10.2-3.9-14.1 0l-130 130c-3.9 3.9-3.9 10.2 0 14.1l130 130c3.9 3.9 10.2 3.9 14.1 0z"></path></svg> Copy'
+        btn.onclick = () => {
+          const code = pre.querySelector('code')
+          if (!code) return
+          navigator.clipboard.writeText(code.textContent || '').then(() => {
+            btn.innerHTML = '<svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor"><path d="M912 190h-69.9c-9.8 0-19.1 4.5-25.1 12.2L404.7 724.5 207 474c-6.1-7.7-15.3-12.2-25.1-12.2H112c-6.7 0-10.4 7.7-6.3 12.9l273.9 347c12.8 16.2 37.4 16.2 50.3 0l488.4-618.9c4.1-5.1 0.4-12.8-6.3-12.8z"></path></svg> Done'
+            btn.classList.add('copied')
+            setTimeout(() => {
+              btn.innerHTML = '<svg viewBox="0 0 1024 1024" width="14" height="14" fill="currentColor"><path d="M832 64H296c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h496v688c0 4.4 3.6 8 8 8h56c4.4 0 8-3.6 8-8V96c0-17.7-14.3-32-32-32zM704 192H192c-17.7 0-32 14.3-32 32v530.7c0 8.5 3.4 16.6 9.4 22.6l173.3 173.3c2.2 2.2 4.7 4 7.4 5.5v1.9h4.2c3.5 1.3 7.2 2 11 2H704c17.7 0 32-14.3 32-32V224c0-17.7-14.3-32-32-32zM350 856.2L263.9 770H350v86.2zM638.7 787.3c-2 2-4.5 3.5-7.1 4.5-1.4.6-2.8.9-4.3 1H416V664h222.7c1.5 0 2.9-.3 4.3-1 2.6-1 5.1-2.5 7.1-4.5l113.3-113.3c3.9-3.9 3.9-10.2 0-14.1l-113.3-113.3c-3.9-3.9-10.2-3.9-14.1 0l-130 130c-3.9 3.9-3.9 10.2 0 14.1l130 130c3.9 3.9 10.2 3.9 14.1 0z"></path></svg> Copy'
+              btn.classList.remove('copied')
+            }, 2000)
+          })
+        }
+        (pre as HTMLElement).style.position = 'relative'
+        pre.appendChild(btn)
+      })
 
     const pTags = contentRef.value?.querySelectorAll('.content_html p')
     pTags?.forEach(p => {
@@ -356,6 +379,41 @@ watch(() => langStore.currentLang, resetForm)
     }
   }
   :deep(.content_html) {
+    pre {
+      position: relative;
+      &:hover .copy-btn {
+        opacity: 1;
+      }
+    }
+    .copy-btn {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 8px;
+      font-size: 12px;
+      line-height: 1;
+      color: #999;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .2s, color .2s, background .2s, border-color .2s;
+      z-index: 10;
+      &:hover {
+        color: #fff;
+        background: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.3);
+      }
+      &.copied {
+        color: #67c23a;
+        border-color: rgba(103,194,58,0.3);
+        background: rgba(103,194,58,0.08);
+      }
+    }
     a {
       color: #032666;
       text-decoration: underline;
