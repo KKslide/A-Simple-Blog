@@ -10,7 +10,7 @@
         <p>一个Echarts+百度地图应用</p>
       </template>
     </Card>
-    <Card v-for="item in list" :key="item.name" :data-image="item.img.startsWith('http') ? item.img : BaseUrl + item.img" @click="check(item.routeName)">
+    <Card v-for="item in list" :key="item.name" :data-image="utils.mediaUrl(item.img)" @click="check(item.routeName)">
       <template #header>
         <h1>{{ item.name }}</h1>
       </template>
@@ -25,9 +25,9 @@
 defineOptions({ name: 'WorksPage' })
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import utils from '@/utils'
 import { portfoliosList } from '@/config/config'
 import Card from './Widgets/Card.vue'
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
 const router = useRouter()
 const list = computed(() => portfoliosList.sort(() => Math.random() - 0.5))
 const check = (routeName: string) => {

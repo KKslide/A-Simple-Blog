@@ -23,7 +23,7 @@
               >
                 <el-carousel-item v-for="(item, index) in blogList['TOP']" :key="item.id" >
                   <div class="top_content" @click="handleItemClick(item.id, index)">
-                    <el-image :src="item.cover_url.startsWith('http') ? item.cover_url : BaseUrl + item.cover_url" fit="cover" style="width: 100%; height: 100%;"></el-image>
+                    <el-image :src="utils.mediaUrl(item.cover_url)" fit="cover" style="width: 100%; height: 100%;"></el-image>
                     <h4 class="top_title">{{ item.title }} >></h4>
                   </div>
                 </el-carousel-item>
@@ -74,7 +74,7 @@
                     <p>{{ sub_item.description }}</p>
                   </div>
                   <div class="b_i_c_img" @click="checkContent(sub_item.id)">
-                    <el-image :src="sub_item.cover_url.startsWith('http') ? sub_item.cover_url : BaseUrl + sub_item.cover_url" fit="cover" style="width: 100%; height: 250px;"></el-image>
+                    <el-image :src="utils.mediaUrl(sub_item.cover_url)" fit="cover" style="width: 100%; height: 250px;"></el-image>
                   </div>
                   <div class="b_i_c_read" @click="checkContent(sub_item.id)">{{ texts.readText }} >></div>
                   <el-divider />
@@ -175,10 +175,10 @@ import type {
 } from '@/interfaces/index'
 import { usePageStore } from '@/stores/pageStore'
 import ClientAPI from '@/api/client/index'
+import utils from '@/utils'
 import Sticker from './Widgets/Sticker.vue'
 const activeIndex = ref(0)
 const carouselRef = ref<CarouselInstance | null>(null)
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
 const pageStore = usePageStore()
 const { blogList, catList: categoryList } = storeToRefs(pageStore)
 const { t } = useI18n()

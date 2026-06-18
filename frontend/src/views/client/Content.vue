@@ -3,7 +3,7 @@
     <el-row>
       <el-col :span="16" :offset="4" :xs="{span:24, offset:0}">
         <div id="content_banner">
-          <span style="display: none;">{{ BaseUrl + contentObj.cover_url }}</span>
+          <span style="display: none;">{{ utils.mediaUrl(contentObj.cover_url) }}</span>
           <el-image :src="categoryBannerUrl" style="width: 100%; height: 120px;" fit="contain"></el-image>
         </div>
         <PageTitle :title="contentObj.title" />
@@ -38,7 +38,7 @@
               controls
               crossorigin="anonymous"
               playsinline
-              :poster="contentObj.cover_url.startsWith('http') ? contentObj.cover_url : BaseUrl + contentObj.cover_url"
+              :poster="utils.mediaUrl(contentObj.cover_url)"
             >
               <source :src="vlogVideoUrl" type="video/mp4" />
             </video>
@@ -120,6 +120,7 @@ import { ref, reactive, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import ClientAPI, { type ArticleViewResult } from '@/api/client/index'
+import utils from '@/utils'
 import { usePageStore } from '@/stores/pageStore'
 import hljs from 'highlight.js'
 import { useLangStore } from '@/stores/langStore'
@@ -137,7 +138,6 @@ const emptyCommentTip = computed(() => t('logContent.emptyCommentTip'))
 const emptyVisitor = computed(() => t('logContent.emptyVisitor'))
 const langStore = useLangStore()
 const pageStore = usePageStore()
-const BaseUrl = import.meta.env.VITE_MEDIA_URL || ''
 const contentObj = ref<ContentConfig>({
   id: 0,
   title: '',
@@ -171,14 +171,8 @@ const commentRules = reactive({
 })
 const contentRef = ref<HTMLElement | null>(null)
 const previewImgList = reactive<string[]>([])
-const categoryBannerUrl = computed(() => {
-  const banner = contentObj.value.category_banner_url || ''
-  return banner.startsWith('http') ? banner : BaseUrl + banner
-})
-const vlogVideoUrl = computed(() => {
-  const video = contentObj.value.video_url || ''
-  return video.startsWith('http') ? video : BaseUrl + video
-})
+const categoryBannerUrl = computed(() => utils.mediaUrl(contentObj.value.category_banner_url || ''))
+const vlogVideoUrl = computed(() => utils.mediaUrl(contentObj.value.video_url || ''))
 function resetForm() {
   commentFormRef.value?.resetFields()
 }

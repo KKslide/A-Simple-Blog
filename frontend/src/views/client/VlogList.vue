@@ -8,7 +8,7 @@
         <el-carousel ref="videoCrs" :interval="2000" :autoplay="true" :type="carouselType" height="300px">
           <el-carousel-item v-for="item in vlogList.slice(0,4)" :key="item.id">
             <div :class="['vlog_item', `item-${item.id}`]" @mouseover="setHover(item.id, true)" @mouseout="setHover(item.id, false)" @click="checkContent(item.id)">
-              <el-image :src="item.cover_url.startsWith('http') ? item.cover_url : BaseUrl + item.cover_url" style="height: 300px; width: 100%;" fit="cover" :lazy="true" loading="lazy"></el-image>
+              <el-image :src="utils.mediaUrl(item.cover_url)" style="height: 300px; width: 100%;" fit="cover" :lazy="true" loading="lazy"></el-image>
               <el-icon class="play_icon" size="80" color="rgba(255,255,255,.3)"><VideoPlay /></el-icon>
               <div class="v_i_info">
                 <h3 class="v_i_title">{{ item.title }}</h3>
@@ -27,7 +27,7 @@
         <el-row :gutter="10">
           <el-col :xs="24" :sm="24" :md="12" :lg="8" :xl="8" v-for="item in vlogList.slice(4)" :key="item.id">
             <div :class="['vlog_item', 'list', `item-${item.id}`]" @mouseover="setHover(item.id, true)" @mouseout="setHover(item.id, false)" @click="checkContent(item.id)">
-              <el-image :src="item.cover_url.startsWith('http') ? item.cover_url : BaseUrl + item.cover_url" fit="cover" style="height:200px; width: 100%;" :lazy="true" loading="lazy"></el-image>
+              <el-image :src="utils.mediaUrl(item.cover_url)" fit="cover" style="height:200px; width: 100%;" :lazy="true" loading="lazy"></el-image>
               <el-icon class="play_icon" size="80" color="rgba(255,255,255,.3)"><VideoPlay /></el-icon>
               <div class="v_i_info">
                 <h3 class="v_i_title">{{ item.title }}</h3>
@@ -89,7 +89,6 @@ const texts = computed(() => ({
   noDataText: t('logList.noData'),
 }))
 const vlogList = computed<BlogItemConfig[]>(() => blogList.value['Vlog'] || [])
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
 const threshold = 768
 const carouselType = ref('card')
 const videoCrs = ref<unknown>(null)

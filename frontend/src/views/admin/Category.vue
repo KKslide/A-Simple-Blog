@@ -137,12 +137,11 @@
 
 <script setup lang="ts">
 import ServerAPI from '@/api/server'
+import utils from '@/utils'
 import { ref, reactive, onMounted } from 'vue'
 import type { UploadResponse } from '@/types/api'
 import { ElMessage, type UploadFile } from 'element-plus'
 import { imageAcceptTypes, isValidImageFile } from '@/config/config'
-
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
 
 interface CategoryDetail {
   id: number | ''
@@ -174,8 +173,7 @@ const cateImgFiles = ref<UploadFile[]>([])
 const bannerPreviewVisible = ref(false)
 
 function resolveBannerUrl(url: string): string {
-  if (!url) return ''
-  return url.startsWith('http') ? url : BaseUrl + url
+  return utils.mediaUrl(url)
 }
 
 function openBannerPreview() {
