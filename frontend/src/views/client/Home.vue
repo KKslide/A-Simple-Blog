@@ -97,7 +97,8 @@ watch(
   z-index: -1;
   // background-image: url("@/assets/img/kk-mirror.jpeg");
   // background-image: url("@/assets/img/dune-poster.png");
-  background-image: url("@/assets/img/gemini_space.png");
+  // background-image: url("@/assets/img/gemini_space.png");
+  background-image: url("https://jpuboss.janime.cn/6a33bbac6b58338796bae041"); // gemini_space.png
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;

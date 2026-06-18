@@ -8,7 +8,7 @@
         <el-col :span="18">
           <div class="content">
             <div id="image">
-              <img src="/src/assets/img/profil.jpg" width="400" />
+              <img src="https://jpuboss.janime.cn/6a33bc8f6b58338796bae042" width="400" />
             </div>
           </div>
         </el-col>

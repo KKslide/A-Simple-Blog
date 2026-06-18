@@ -50,13 +50,6 @@ export default class Request {
         if (url.indexOf('http') > -1 || url.indexOf('https') > -1) {
           config.baseURL = ''
         }
-        const obj = {
-          browser: utils.browse(),
-          os: utils.clientOs(),
-          apptype: 1,
-          from: 'pc',
-        }
-        config.headers = Object.assign(config.headers || {}, obj)
 
         loadingInstance = ElLoading.service(loadingOpt) as ReturnType<typeof ElLoading.service>
 

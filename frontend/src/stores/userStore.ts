@@ -1,4 +1,4 @@
-import type { UserDataConfig } from '@/interfaces'
+import type { UserDataConfig } from '@/types/api'
 import { defineStore } from 'pinia'
 
 const defaultUserState: UserDataConfig = {

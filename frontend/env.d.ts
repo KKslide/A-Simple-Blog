@@ -5,6 +5,11 @@ declare module "*.vue" {
   export default component;
 }
 
+declare module "*.scss" {
+  const content: string
+  export default content
+}
+
 interface ImportMetaEnv {
   readonly VITE_API_URL?: string
   readonly VITE_MEDIA_URL?: string

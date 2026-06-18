@@ -121,11 +121,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import ClientAPI, { type ArticleViewResult } from '@/api/client/index'
 import utils from '@/utils'
+import 'vue-plyr/dist/vue-plyr.css'
 import { usePageStore } from '@/stores/pageStore'
 import hljs from 'highlight.js'
 import { useLangStore } from '@/stores/langStore'
 import { useI18n } from 'vue-i18n'
-import type { ContentConfig, ContentData, CommentItemConfig, ApiResponse } from '@/interfaces'
+import type { ContentConfig, ContentData, CommentItemConfig, ApiResponse } from '@/types/api'
 import { dayjs } from '@/config/config'
 const { t } = useI18n()
 const texts = computed(() => ({

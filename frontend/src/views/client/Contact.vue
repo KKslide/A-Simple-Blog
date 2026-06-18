@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 defineOptions({ name: 'ContactPage' })
-import type { MsgDataConfig, MsgSendConfig } from '@/interfaces'
+import type { MsgDataConfig, MsgSendConfig } from '@/types/api'
 import { reactive, ref, computed, watch, onMounted, onActivated } from 'vue'
 import dayjs from 'dayjs' // 导入 Day.js
 import { ElMessage } from 'element-plus'

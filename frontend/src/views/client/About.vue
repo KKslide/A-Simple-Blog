@@ -30,8 +30,10 @@
             </el-col>
             <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
               <div id="profil_img">
-                <img src="@/assets/img/profil.jpg" class="img-responsive old" />
-                <img src="@/assets/img/profil.edit.jpg" class="img-responsive young" />
+                <!-- <img src="@/assets/img/profil.jpg" class="img-responsive old" />
+                <img src="@/assets/img/profil.edit.jpg" class="img-responsive young" /> -->
+                <img src="https://jpuboss.janime.cn/6a33bc8f6b58338796bae042" class="img-responsive old" />
+                <img src="https://jpuboss.janime.cn/6a33bc9b6b58338796bae043" class="img-responsive young" />
               </div>
             </el-col>
             <el-divider></el-divider>

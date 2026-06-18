@@ -11,6 +11,14 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Back: typeof import('@element-plus/icons-vue')['Back']
+    Clock: typeof import('@element-plus/icons-vue')['Clock']
+    CollectionTag: typeof import('@element-plus/icons-vue')['CollectionTag']
+    Comment: typeof import('@element-plus/icons-vue')['Comment']
+    DArrowLeft: typeof import('@element-plus/icons-vue')['DArrowLeft']
+    DArrowRight: typeof import('@element-plus/icons-vue')['DArrowRight']
+    Delete: typeof import('@element-plus/icons-vue')['Delete']
+    EditPen: typeof import('@element-plus/icons-vue')['EditPen']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElCarousel: typeof import('element-plus/es')['ElCarousel']
     ElCarouselItem: typeof import('element-plus/es')['ElCarouselItem']
@@ -49,7 +57,21 @@ declare module 'vue' {
     ElTableColumn: typeof import('element-plus/es')['ElTableColumn']
     ElTooltip: typeof import('element-plus/es')['ElTooltip']
     ElUpload: typeof import('element-plus/es')['ElUpload']
+    Expand: typeof import('@element-plus/icons-vue')['Expand']
+    HomeFilled: typeof import('@element-plus/icons-vue')['HomeFilled']
+    Location: typeof import('@element-plus/icons-vue')['Location']
+    Message: typeof import('@element-plus/icons-vue')['Message']
+    Phone: typeof import('@element-plus/icons-vue')['Phone']
+    Plus: typeof import('@element-plus/icons-vue')['Plus']
+    QuestionFilled: typeof import('@element-plus/icons-vue')['QuestionFilled']
+    Right: typeof import('@element-plus/icons-vue')['Right']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    Search: typeof import('@element-plus/icons-vue')['Search']
+    SwitchButton: typeof import('@element-plus/icons-vue')['SwitchButton']
+    VideoPlay: typeof import('@element-plus/icons-vue')['VideoPlay']
+    View: typeof import('@element-plus/icons-vue')['View']
+    ZoomIn: typeof import('@element-plus/icons-vue')['ZoomIn']
+    ZoomOut: typeof import('@element-plus/icons-vue')['ZoomOut']
   }
 }
