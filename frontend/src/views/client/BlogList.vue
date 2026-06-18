@@ -172,7 +172,7 @@ import type {
   CategoryItemConfig,
   BlogItemConfig,
   BloglistConfig
-} from '@/interfaces/index'
+} from '@/types/api'
 import { usePageStore } from '@/stores/pageStore'
 import ClientAPI from '@/api/client/index'
 import utils from '@/utils'

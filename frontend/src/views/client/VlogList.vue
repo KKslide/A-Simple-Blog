@@ -72,7 +72,7 @@ import { useRouter } from 'vue-router'
 import ClientAPI from '@/api/client/index'
 import utils from '@/utils'
 import { storeToRefs } from 'pinia'
-import type { BlogItemConfig, BloglistConfig } from '@/interfaces'
+import type { BlogItemConfig, BloglistConfig } from '@/types/api'
 import { usePageStore } from '@/stores/pageStore'
 const pageStore = usePageStore()
 const { blogList } = storeToRefs(pageStore)

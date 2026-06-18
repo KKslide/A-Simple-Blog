@@ -6,7 +6,7 @@ import type {
   CommentSendConfig,
   BlogItemConfig,
   ApiResponse
-} from '@/interfaces'
+} from '@/types/api'
 import ApiHelper from "@/api/apiCaller.js";
 
 /** 文章阅读统计响应 */

@@ -3,7 +3,7 @@ import type {
   BloglistConfig,
   BlogItemConfig,
   CategoryItemConfig,
-} from '@/interfaces'
+} from '@/types/api'
 import { defineStore } from 'pinia'
 
 export const usePageStore = defineStore('page', {
