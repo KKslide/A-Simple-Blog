@@ -192,7 +192,7 @@
               <template #default>
                 <img
                   v-if="articleFrom.cover_url"
-                  :src="articleFrom.cover_url.startsWith('http') ? articleFrom.cover_url : BaseUrl + articleFrom.cover_url"
+                  :src="utils.mediaUrl(articleFrom.cover_url)"
                   style="width: 146px; height: 94px; border-radius: 5px; object-fit: cover"
                 />
                 <div v-else>
@@ -292,6 +292,7 @@
 
 <script setup lang="ts">
 import ServerAPI from '@/api/server'
+import utils from '@/utils'
 import { ref, reactive, shallowRef, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor } from '@wangeditor/editor'
@@ -300,8 +301,6 @@ import { ElMessage, ElMessageBox, ElImageViewer, type FormInstance, type FormRul
 import { imageAcceptTypes, isValidImageFile } from '@/config/config'
 import Cropper from './Widgets/Cropper.vue'
 import '@wangeditor/editor/dist/css/style.css'
-
-const BaseUrl = import.meta.env.VITE_MEDIA_URL || ''
 
 const editorRef = shallowRef<IDomEditor | null>(null)
 const toolbarConfig = ref({})
@@ -332,7 +331,7 @@ const handleCreated = (editor: IDomEditor) => {
     tempForm.append('file', file)
     ServerAPI.picUpload(tempForm).then((res) => {
       if (res?.code === 1 && res.data?.imageUrl) {
-        insertFn(BaseUrl + res.data.imageUrl)
+        insertFn(utils.mediaUrl(res.data.imageUrl))
       } else {
         alert('上传失败!')
       }
@@ -385,11 +384,7 @@ const showCropper = ref(false)
 const cropperFile = ref<string | null>(null)
 
 const showViewer = ref(false)
-const previewUrl = computed(() =>
-  articleFrom.cover_url?.startsWith('http')
-    ? articleFrom.cover_url
-    : BaseUrl + articleFrom.cover_url
-)
+const previewUrl = computed(() => utils.mediaUrl(articleFrom.cover_url || ''))
 
 /* **********drawer配置********** */
 const drawerTitle = computed(() => {
