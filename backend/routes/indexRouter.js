@@ -1,20 +1,41 @@
+/**
+ * 前台路由 - RESTful 风格
+ *
+ * 遵循 OpenAPI 规范：
+ * - GET    读取资源
+ * - POST   创建资源
+ *
+ * URL 命名规则：
+ * - 资源名用复数名词（articles, messages, visits）
+ * - 资源 ID 用路径参数（:id）
+ * - 不使用动词（add, get）
+ *
+ * 注意：路由前缀 /user 在 app.js 中通过 app.use("/api/user", indexRouter) 挂载
+ *       但前端 baseURL 在开发环境为空，需要完整路径，所以这里保留 /user 前缀
+ */
+
 const express = require("express");
 const router = express.Router();
 const handler = require("../handlers/indexHandler");
 const path = require("path");
 const fs = require("fs");
 
-// 校验地图参数（仅允许中文、字母、数字、下划线、短横线）
-function isValidMapParam(str) {
-  return /^[一-龥a-zA-Z0-9_-]+$/.test(str);
-}
+// ============================================================
+// 地图数据
+// ============================================================
 
-// 获取地图数据接口
-router.get("/map", (req, res) => {
-  const province = req.query.province; // 省份名
-  const city = req.query.city; // 市名
+/**
+ * GET /user/map
+ * 获取 ECharts 地图 GeoJSON 数据
+ * 查询参数: province?, city?
+ * 响应: GeoJSON 对象
+ */
+router.get("/user/map", (req, res) => {
+  const province = req.query.province;
+  const city = req.query.city;
 
   // 校验参数，防止路径穿越
+  const isValidMapParam = (str) => /^[一-龥a-zA-Z0-9_-]+$/.test(str);
   if (province && !isValidMapParam(province)) {
     return res.status(400).json({ error: "参数不合法" });
   }
@@ -49,23 +70,78 @@ router.get("/map", (req, res) => {
   });
 });
 
-/* ********* 前端 ********* */
-/* 获取blog列表数据 或 vlog列表数据 */
-router.get("/page", handler.getIndexPage);
-/* bloglist页面搜索 */
-router.post("/search", handler.searchIndexPage);
-/* 获取详情页 */
-router.post("/content", handler.getContentPage);
-/* 记录文章阅读 (与详情分离) */
-router.post("/content/view", handler.recordArticleView);
-/* 评论文章 */
-router.post("/comment", handler.Comment);
+// ============================================================
+// 文章相关
+// ============================================================
 
-/* 留言 */
-router.get("/message/get", handler.getMessages);
-router.post("/message/add", handler.leaveMessage);
+/**
+ * GET /user/articles
+ * 获取文章列表（首页数据，按分类分组）
+ * 响应: { code: 1, data: { catList: [...], blogList: { TOP: [...], [categoryName]: [...] } } }
+ */
+router.get("/user/articles", handler.getIndexPage);
 
-/* 全站访问统计 (PV) */
-router.post("/visit", handler.visitRecord);
+/**
+ * GET /user/articles/search
+ * 搜索文章
+ * 查询参数: keyword?, starttime?, endtime?, category_id?, pageNo?, pageSize?
+ * 响应: { code: 1, data: ArticleItem[] }
+ */
+router.get("/user/articles/search", handler.searchIndexPage);
+
+/**
+ * GET /user/articles/:id
+ * 获取文章详情（含上下篇和评论）
+ * 路径参数: id - 文章 ID
+ * 响应: { code: 1, data: { prev, cur, next } }
+ */
+router.get("/user/articles/:id", handler.getContentPage);
+
+/**
+ * POST /user/articles/:id/view
+ * 记录文章阅读（IP+日期去重）
+ * 路径参数: id - 文章 ID
+ * 响应: { code: 1, data: { counted: boolean, view_count: number } }
+ */
+router.post("/user/articles/:id/view", handler.recordArticleView);
+
+/**
+ * POST /user/articles/:id/comments
+ * 发表评论
+ * 路径参数: id - 文章 ID
+ * 请求体: { nickname?, comment }
+ * 响应: { code: 1, msg: "评论成功" }
+ */
+router.post("/user/articles/:id/comments", handler.Comment);
+
+// ============================================================
+// 留言相关
+// ============================================================
+
+/**
+ * GET /user/messages
+ * 获取留言列表
+ * 响应: { code: 1, data: MessageItem[] }
+ */
+router.get("/user/messages", handler.getMessages);
+
+/**
+ * POST /user/messages
+ * 提交留言
+ * 请求体: { nickname, content }
+ * 响应: { code: 1, msg: "留言成功" }
+ */
+router.post("/user/messages", handler.leaveMessage);
+
+// ============================================================
+// 访问统计
+// ============================================================
+
+/**
+ * POST /user/visits
+ * 记录全站访问（PV）
+ * 响应: { code: 1, data: { recorded: true, ip: string } }
+ */
+router.post("/user/visits", handler.visitRecord);
 
 module.exports = router;
