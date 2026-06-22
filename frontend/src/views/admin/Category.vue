@@ -201,7 +201,8 @@ function edit(row: CategoryItem) {
 }
 
 function del(id: number | '') {
-  ServerAPI.delCategory({ id })
+  if (typeof id !== 'number') return
+  ServerAPI.delCategory(id)
     .then(() => {
       ElMessage.success('删除成功!')
       categoryData.value = categoryData.value.filter((v) => v.id !== id)
@@ -245,7 +246,8 @@ function saveHandler() {
   }
 
   if (handleType.value === 'edit') {
-    ServerAPI.editCategory(categoryDetail).then(() => {
+    if (typeof categoryDetail.id !== 'number') return
+    ServerAPI.editCategory(categoryDetail.id, categoryDetail).then(() => {
       ElMessage.success('修改成功!')
       handleClose()
       getCateData()

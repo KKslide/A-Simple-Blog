@@ -429,7 +429,7 @@ function checkCommentDetail(_row: CommentItem) {
 }
 
 function delComment(row: CommentItem) {
-  ServerAPI.delArticleComment({ id: row.id }).then(() => {
+  ServerAPI.delArticleComment(row.id).then(() => {
     ElMessage.success('删除成功')
     if (curComment.value) {
       curComment.value.comments = curComment.value.comments?.filter((v: CommentItem) => v.id !== row.id) || []
@@ -451,7 +451,7 @@ async function toggleSomeKey(row: ArticleItem, key: 'is_pinned' | 'is_published'
   const oldVal = row[key]
   row[key] = newVal // 乐观更新 UI
   try {
-    const res = await ServerAPI.editArticle({ ...row })
+    const res = await ServerAPI.editArticle(row.id, { ...row })
     if (res.code === 1) ElMessage.success('修改成功✌️')
   } catch {
     row[key] = oldVal // 失败回滚
@@ -459,7 +459,7 @@ async function toggleSomeKey(row: ArticleItem, key: 'is_pinned' | 'is_published'
 }
 
 function del(id: number) {
-  ServerAPI.delArticle({ id }).then((res) => {
+  ServerAPI.delArticle(id).then((res) => {
     if (res.code === 1) {
       ElMessage.success('删除成功')
       getArticleData()
@@ -599,7 +599,7 @@ function saveHandler() {
     const res =
       drawerType.value === 'add'
         ? await ServerAPI.addArticle(articleFrom)
-        : await ServerAPI.editArticle(articleFrom)
+        : await ServerAPI.editArticle(articleFrom.id!, articleFrom)
     const successMsg = {
       add: '添加文章成功✌️',
       edit: '文章修改成功✌️'
