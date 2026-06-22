@@ -14,14 +14,14 @@ export default defineConfig(({ mode }) => {
     base: '/',
     plugins: [
       vue(),
-      vueDevTools(),
+      mode === 'development' && vueDevTools(),
       AutoImport({
         resolvers: [ElementPlusResolver()],
       }),
       Components({
         resolvers: [ElementPlusResolver(), epIconResolver()],
       }),
-    ],
+    ].filter(Boolean),
     server: {
       host: '0.0.0.0',
       port: 8888,
@@ -37,12 +37,12 @@ export default defineConfig(({ mode }) => {
         '/pic': {
           changeOrigin: true,
           target: VITE_API_URL,
-        }
+        },
       },
     },
     resolve: {
       alias: {
-        '@': fileURLToPath(new URL('./src', import.meta.url))
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
       },
     },
     build: {
@@ -57,13 +57,15 @@ export default defineConfig(({ mode }) => {
             if (id.includes('node_modules')) {
               if (id.includes('element-plus')) return 'vendor_element_plus'
               if (id.includes('highlight.js')) return 'vendor_highlight'
+              if (id.includes('vue-router')) return 'vendor_vue_router'
               if (id.includes('vue')) return 'vendor_vue'
               if (id.includes('axios')) return 'vendor_axios'
               if (id.includes('pinia')) return 'vendor_pinia'
-              if (id.includes('vue-cropper')) return 'vendor_vue_cropper'
+              if (id.includes('vue-cropper') || id.includes('cropperjs')) return 'vendor_cropper'
               if (id.includes('typed.js')) return 'vendor_typed_js'
               if (id.includes('vue-i18n')) return 'vendor_vue_i18n'
               if (id.includes('js-md5')) return 'vendor_js_md5'
+              if (id.includes('dayjs')) return 'vendor_dayjs'
               if (id.includes('vue-plyr')) return 'vendor_vue_plyr'
               if (id.includes('wangeditor')) return 'vendor_wangeditor'
               if (id.includes('html2canvas')) return 'vendor_html2canvas'

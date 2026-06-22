@@ -31,12 +31,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import utils from '@/utils'
+import type { CategoryItem } from '@/types/api'
 
-interface Category {
-  id: number;
-  name: string;
-  show_type?: string;
-}
 
 interface Position {
   x: number | string;
@@ -60,13 +56,13 @@ const isDragging = ref<boolean>(false)
 const isCollapsed = ref<boolean>(false)
 
 const props = defineProps<{
-  cateList?: Category[];
+  cateList?: CategoryItem[];
   curCat?: string;
   demoMode?: boolean;
 }>()
 
 const emit = defineEmits<{
-  (e: 'switch', category: Category | null): void;
+  (e: 'switch', category: CategoryItem | null): void;
 }>()
 
 const pos = reactive<Position>({ x: 10, y: 200 })
@@ -209,7 +205,7 @@ function setCollapse (boo: boolean, e: MouseEvent | TouchEvent) {
   endHandler(e)
 }
 
-function emitSwitch (obj: Category | null, e: MouseEvent | TouchEvent) {
+function emitSwitch (obj: CategoryItem | null, e: MouseEvent | TouchEvent) {
   if (e.type.startsWith('touch')) {
     if (isOnTarget(e as TouchEvent)) {
       emit('switch', obj)
