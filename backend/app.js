@@ -90,10 +90,12 @@ app.get(/^\/(?!api|upload|server\/.*\.(js|css|map|ico|png|jpg|jpeg|svg)).*/, (re
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
-app.use("/api/user", apiLimiter, indexRouter);
-app.use("/api/admin/login", loginLimiter);
-app.use("/api/admin", apiLimiter, adminRouter);
-app.use("/api/pic", apiLimiter, picRouter);
+// 路由已包含完整前缀（/admin/auth/login, /user/articles 等）
+// 登录限流仅应用于登录接口
+app.use("/api/admin/auth/login", loginLimiter);
+app.use("/api", apiLimiter, indexRouter);
+app.use("/api", apiLimiter, adminRouter);
+app.use("/api", apiLimiter, picRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
