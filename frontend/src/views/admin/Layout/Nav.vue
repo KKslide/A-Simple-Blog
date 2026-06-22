@@ -14,7 +14,7 @@
       <el-menu-item index="article">文章管理</el-menu-item>
       <el-menu-item index="message">留言管理</el-menu-item>
       <el-sub-menu index="options" popper-class="nav_opt_menu">
-        <template #title>选项</template>
+        <template #title>{{ UserStore.username }}</template>
         <a href="/home" target="_blank">
           <li class="el-menu-item">
             <el-icon><HomeFilled /></el-icon>

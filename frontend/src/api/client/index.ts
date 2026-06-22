@@ -22,40 +22,40 @@ export interface ArticleViewResult {
 class ClientAPI extends ApiHelper {
   /** 全站访问 PV (建议每会话调用一次) */
   visit() {
-    return this.post("/user/visit");
+    return this.post("/user/visits");
   }
 
   getBlogList(data = {}) {
-    return this.get<ApiResponse<BloglistConfig>>("/user/page", data);
+    return this.get<ApiResponse<BloglistConfig>>("/user/articles", data);
   }
 
   searchBlogList(params = {}) {
-    return this.post<ApiResponse<BlogItemConfig[]>>('/user/search', params);
+    return this.get<ApiResponse<BlogItemConfig[]>>('/user/articles/search', params);
   }
 
-  getBlogContent(data = {}) {
-    return this.post<ApiResponse<ContentData>>("/user/content", data);
+  getBlogContent(id: string | number) {
+    return this.get<ApiResponse<ContentData>>(`/user/articles/${id}`);
   }
 
   /** 记录文章阅读 (与详情接口分离) */
-  recordArticleView(data: { contentid: number }) {
-    return this.post<ArticleViewResult>("/user/content/view", data);
+  recordArticleView(id: string | number) {
+    return this.post<ArticleViewResult>(`/user/articles/${id}/view`);
   }
 
-  postBlogComment(data: CommentSendConfig) {
-    return this.post("/user/comment", data);
+  postBlogComment(id: string | number, data: Record<string, unknown>) {
+    return this.post<ApiResponse, Record<string, unknown>>(`/user/articles/${id}/comments`, data);
   }
 
   getVlogList(params = {}) {
-    return this.get<ApiResponse<BloglistConfig>>(`/user/page`, params);
+    return this.get<ApiResponse<BloglistConfig>>(`/user/articles`, params);
   }
 
   getMessage() {
-    return this.get<ApiResponse<MsgDataConfig[]>>('/user/message/get')
+    return this.get<ApiResponse<MsgDataConfig[]>>('/user/messages')
   }
 
   postMessage(data: MsgSendConfig) {
-    return this.post("/user/message/add", data)
+    return this.post("/user/messages", data)
   }
 
   getMapData(data = {}) {

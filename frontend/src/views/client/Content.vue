@@ -182,8 +182,8 @@ function sendComment(data: { comment: string; name: string }) {
     if (valid) {
       const { id: contentid } = contentObj.value as ContentConfig
       const { comment, name: visitor } = data
-      const params = { contentid, comment: comment ?? '', nickname: visitor ?? '' }
-      ClientAPI.postBlogComment(params)
+      const params = { comment: comment ?? '', nickname: visitor ?? '' }
+      ClientAPI.postBlogComment(contentid, params)
         .then(() => {
           if (Array.isArray(contentObj.value.comment)) {
             const localComment: CommentItemConfig = {
@@ -246,7 +246,7 @@ function recordArticleView(articleId: number, baseViewCount?: number) {
   // 先乐观 +1, 接口返回后再校准 (同日重复访问会回退为服务端值)
   syncViewCountToUi(id, base + 1)
 
-  ClientAPI.recordArticleView({ contentid: id })
+  ClientAPI.recordArticleView(id)
     .then((res) => {
       if (Number(route.params.id) !== id) return
       applyViewCountFromResponse(res, id, base)
@@ -262,7 +262,7 @@ function recordArticleView(articleId: number, baseViewCount?: number) {
 function getContentData() {
   const { id } = route.params as { id: string }
   const articleId = Number(id)
-  ClientAPI.getBlogContent({ contentid: articleId })
+  ClientAPI.getBlogContent(articleId)
     .then(async res => {
       const { code, data, msg } = res as ApiResponse<ContentData>
       if (!data?.cur) {

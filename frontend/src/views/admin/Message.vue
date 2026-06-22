@@ -71,7 +71,7 @@ function checkMsg(_row: MessageItem) {
 }
 
 function deleteMsg(id: number) {
-  ServerAPI.delMsg({ id }).then(() => {
+  ServerAPI.delMsg(id).then(() => {
     ElMessage.success('删除成功✌️')
     getMessageList()
   })
