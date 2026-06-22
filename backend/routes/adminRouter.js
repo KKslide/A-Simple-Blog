@@ -21,44 +21,48 @@ router.post("/logout", (req, res) => {
   });
 });
 
-router.use(authMiddleware);
+// 🔒 使用独立受保护子路由，auth 中间件作为其第一层，杜绝权限绕过
+const protectedRouter = express.Router();
+protectedRouter.use(authMiddleware);
 
 /* 修改密码 */
-router.post("/info/edit", handler.editInfo);
+protectedRouter.post("/info/edit", handler.editInfo);
 
 /* 后台-首页数据 */
-router.get("/dashboard", handler.getDashboard);
+protectedRouter.get("/dashboard", handler.getDashboard);
 
 /* 分类 */
 /* 分类-获取 */
-router.get("/categories", handler.getCategory);
+protectedRouter.get("/categories", handler.getCategory);
 /* 分类-新增 */
-router.post("/categories/add", handler.addCategory);
+protectedRouter.post("/categories/add", handler.addCategory);
 /* 分类-删除 */
-router.post("/categories/del", handler.delCategory);
+protectedRouter.post("/categories/del", handler.delCategory);
 /* 分类-修改 */
-router.post("/categories/edit", handler.editCategory);
+protectedRouter.post("/categories/edit", handler.editCategory);
 
 /* 文章 */
 /* 文章-获取 */
-router.get("/articles", handler.getArticle);
+protectedRouter.get("/articles", handler.getArticle);
 /* 文章-新增 */
-router.post("/articles/add", handler.addArticle);
+protectedRouter.post("/articles/add", handler.addArticle);
 /* 文章-删除 */
-router.post("/articles/del", handler.delArticle);
+protectedRouter.post("/articles/del", handler.delArticle);
 /* 文章-修改 */
-router.post("/articles/edit", handler.editArticle);
+protectedRouter.post("/articles/edit", handler.editArticle);
 
 /* 评论 */
 /* 评论-获取 */
-router.get("/comment", handler.getComment);
+protectedRouter.get("/comment", handler.getComment);
 /* 评论-删除 */
-router.post("/comment/del", handler.delComment);
+protectedRouter.post("/comment/del", handler.delComment);
 
 /* 留言 */
 /* 留言-获取 */
-router.get("/message/get", handler.adminGetMessages);
+protectedRouter.get("/message/get", handler.adminGetMessages);
 /* 留言-删除 */
-router.post("/message/del", handler.delMessage);
+protectedRouter.post("/message/del", handler.delMessage);
+
+router.use(protectedRouter);
 
 module.exports = router;

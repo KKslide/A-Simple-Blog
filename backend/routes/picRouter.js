@@ -5,8 +5,13 @@ const path = require("path");
 const fs = require("fs");
 const { formidable } = require("formidable");
 const { success, fail } = require("../lib/response");
+const authMiddleware = require("../middleware/auth.js");
+
 /* 七牛云图片上传 */
 const qiniuUpload = require('../lib/qiniuModule.js');
+
+// 🔒 上传接口需要登录验证
+router.use(authMiddleware);
 
 /* 七牛云图片上传 */
 router.post("/upload", qiniuUpload.picUpload);
