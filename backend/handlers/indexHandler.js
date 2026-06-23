@@ -104,12 +104,11 @@ async function getMessages(req, res, next) {
  */
 async function leaveMessage(req, res, next) {
   try {
-    const nickname = (req.body.nickname || "").toString().trim();
-    const content = (req.body.content || "").toString().trim();
     const ip = util.getClientIp(req);
+    const nickname = (req.body.nickname || ip).toString().trim();
+    const content = (req.body.content || "").toString().trim();
 
     // 输入校验
-    if (!nickname) return fail(res, "昵称不能为空");
     if (!content) return fail(res, "留言内容不能为空");
     if (nickname.length > 50) return fail(res, "昵称不能超过50字");
     if (content.length > 500) return fail(res, "留言内容不能超过500字");
