@@ -352,6 +352,7 @@ onBeforeUnmount(() => {
           font-size: 15px;
           margin: 0;
           color: #fff;
+          white-space: nowrap;
         }
 
         p:last-child {

@@ -38,7 +38,8 @@ const authMiddleware = require("../middleware/auth.js");
  */
 router.get("/admin/auth/status", (req, res) => {
   if (req.session?.logData?.login) {
-    res.json({ code: 1, msg: "已登录", data: { loggedIn: true } });
+    const { login, ...userInfo } = req.session.logData;
+    res.json({ code: 1, msg: "已登录", data: { loggedIn: true, userInfo } });
   } else {
     res.json({ code: 0, msg: "未登录" });
   }
