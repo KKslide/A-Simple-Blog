@@ -65,7 +65,7 @@ app.use("/upload", express.static(path.join(__dirname, "upload")));
 const distPath = path.join(__dirname, "dist");
 
 app.use(
-  "/server",
+  "/admin",
   expressStaticGzip(distPath, {
     enableBrotli: true,
     orderPreference: ["gz", "br"],
@@ -82,11 +82,12 @@ app.use(
   })
 );
 
-app.get("/admin", (req, res) => {
-  res.redirect("/server");
+// 向后兼容：旧 /server 路径 301 跳转到 /admin
+app.get(/^\/server(.*)/, (req, res) => {
+  res.redirect(301, "/admin" + (req.params[0] || ""));
 });
 
-app.get(/^\/(?!api|upload|server\/.*\.(js|css|map|ico|png|jpg|jpeg|svg)).*/, (req, res) => {
+app.get(/^\/(?!api|upload|admin\/.*\.(js|css|map|ico|png|jpg|jpeg|svg)).*/, (req, res) => {
   res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 

@@ -27,17 +27,9 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       port: 8888,
       proxy: {
-        '/user': {
+        '/api': {
           changeOrigin: true,
-          target: VITE_API_URL,
-        },
-        '/admin': {
-          changeOrigin: true,
-          target: VITE_API_URL,
-        },
-        '/pic': {
-          changeOrigin: true,
-          target: VITE_API_URL,
+          target: 'http://127.0.0.1:8088',
         },
       },
     },

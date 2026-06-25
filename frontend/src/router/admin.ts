@@ -1,9 +1,9 @@
 import type { RouteRecordRaw } from 'vue-router'
 
-const serverRoutes: RouteRecordRaw[] = [
+const adminRoutes: RouteRecordRaw[] = [
   {
-    path: '/server',
-    name: 'server',
+    path: '/admin',
+    name: 'admin',
     meta: {
       bodyClass: 'dark',
     },
@@ -11,7 +11,7 @@ const serverRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: '',
-        redirect: '/server/dashboard'
+        redirect: '/admin/dashboard'
       },
       {
         path: 'dashboard',
@@ -40,11 +40,11 @@ const serverRoutes: RouteRecordRaw[] = [
     ]
   },
   {
-    path: '/server/login',
+    path: '/admin/login',
     name: 'login',
     component: () => import('@/views/admin/Login.vue'),
     meta: { title: '登录' }
   }
 ]
 
-export { serverRoutes }
+export { adminRoutes }

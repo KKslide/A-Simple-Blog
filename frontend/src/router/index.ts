@@ -3,13 +3,13 @@ import { createRouter, createWebHistory } from 'vue-router'
 /* **********客户端********** */
 import { clientRoutes } from './client'
 /* **********管理端********** */
-import { serverRoutes } from './server'
+import { adminRoutes } from './admin'
 
 const router = createRouter({
   history: createWebHistory((import.meta.env.VITE_BASE_URL as string) || '/'),
   routes: [
     ...clientRoutes,
-    ...serverRoutes,
+    ...adminRoutes,
     {
       path: '/:pathMatch(.*)*', // 通配所有未匹配路径
       name: 'NotFound',
