@@ -50,6 +50,7 @@ const plyrOptions = {
     quality: '画质',
     loop: '循环',
   },
+  iconUrl: 'https://jpuboss.janime.cn/6a3b4db96b58338796bae046', // 不设置这个的话, plyr会跑去自家的cdn下载svg图标, 很慢的
 }
 
 import dayjs from 'dayjs'
@@ -68,78 +69,85 @@ const portfoliosList = [
     name: 'Scroll-Demo',
     img: '/upload/upload_ace9f5bedbfe78f5192cbfa1e6f9ecca.JPG',
     description: '一个丝滑滚动的样式效果',
-    routeName: 'scrollDemo'
+    routeName: 'scrollDemo',
   },
   {
     name: 'Color-BG',
     img: '/upload/upload_4ca907a03dc9832035f0af9422068a2a.JPG',
     description: '用CSS动态改变背景色',
-    routeName: 'colorBG'
+    routeName: 'colorBG',
   },
   {
     name: 'Thanos-Flip',
     img: '/upload/upload_f5a1421ab2e8af04763221caa393d8fb.JPG',
     description: 'canvas绘制灭霸弹指效果',
-    routeName: 'thanosFlip'
+    routeName: 'thanosFlip',
   },
   {
     name: 'Hover-effect',
     img: '/upload/upload_719d379ee4b4d8cb81782b7856df7a0b.JPG',
     description: '好玩的鼠标悬停CSS样式',
-    routeName: 'hoverEffect'
+    routeName: 'hoverEffect',
   },
   {
     name: 'Neon Light',
     img: '/upload/upload_6c739a9d46e9c0a9f26601694c6af216.JPG',
     description: 'CSS仿霓虹特效',
-    routeName: 'neonLamp'
+    routeName: 'neonLamp',
   },
   {
     name: 'Glitch Demo',
     img: '/upload/upload_fe5b5338cc4fb903ecb995ff0942bd96.JPG',
     description: 'JS+CSS仿造故障特效',
-    routeName: 'glitchEffect'
+    routeName: 'glitchEffect',
   },
   {
     name: 'Waterfall',
     img: '/upload/upload_cf6aee3120e20241d86a5230dac7c22c.png',
     description: 'JS+CSS制作瀑布流效果',
-    routeName: 'waterfall'
+    routeName: 'waterfall',
   },
   {
     name: 'Echarts + Map',
     img: '/upload/upload_2028f88cba27a22edf7c5a7016d2b5dd.JPG',
     description: '基于echarts制作中国地图下钻效果',
-    routeName: 'echartsDrillDown'
+    routeName: 'echartsDrillDown',
   },
   {
-    name:'Map-Cluster',
+    name: 'Map-Cluster',
     img: '/upload/baidu-map.jpeg',
     description: '百度地图应用==>>>缩放/聚合/标记点',
-    routeName: 'mapCluster'
+    routeName: 'mapCluster',
   },
   {
-    name:'A Sticker 😜',
+    name: 'A Sticker 😜',
     img: '/upload/sticker.jpeg',
     description: '一个贴在左侧的sticker组件',
-    routeName: 'sticker'
+    routeName: 'sticker',
   },
   {
-    name:'Snake 🐍',
+    name: 'Snake 🐍',
     img: '/upload/snake_html.jpeg',
     description: '每个前端er都要会写的贪吃蛇😂',
-    routeName: 'snake'
+    routeName: 'snake',
   },
   {
     name: 'Some Effects',
     img: '/upload/process_bar.jpeg',
     description: 'Some effects',
-    routeName: 'someEffects'
-  }
+    routeName: 'someEffects',
+  },
+  {
+    name: 'Pretext Dialog',
+    img: 'https://jpuboss.janime.cn/6a3b51376b58338796bae048',
+    description: '用Pretext做的对话框',
+    routeName: 'pretextDialog',
+  },
 ]
 
 // 图片上传配置
-const imageAcceptTypes = 'image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/avif,image/tiff'
+const imageAcceptTypes =
+  'image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,image/avif,image/tiff'
 const imageAcceptExtensions = '.jpg,.jpeg,.png,.gif,.webp,.bmp,.svg,.avif,.tiff,.tif'
 
 /** 校验文件是否为合法图片类型 */
@@ -151,4 +159,12 @@ function isValidImageFile(file: File): boolean {
   return imageAcceptExtensions.split(',').includes(ext)
 }
 
-export { plyrOptions, hljs, portfoliosList, dayjs, imageAcceptTypes, imageAcceptExtensions, isValidImageFile }
+export {
+  plyrOptions,
+  hljs,
+  portfoliosList,
+  dayjs,
+  imageAcceptTypes,
+  imageAcceptExtensions,
+  isValidImageFile,
+}

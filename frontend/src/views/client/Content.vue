@@ -32,17 +32,16 @@
 
         <!-- 视频部分 -->
         <div class="plyr-wrapper" v-if="contentObj.category == 'Vlog' && showPlayer">
-          <vue-plyr>
-            <video
-              :key="contentObj.video_url"
-              controls
-              crossorigin="anonymous"
-              playsinline
-              :poster="utils.mediaUrl(contentObj.cover_url)"
-            >
-              <source :src="vlogVideoUrl" type="video/mp4" />
-            </video>
-          </vue-plyr>
+          <video
+            ref="videoRef"
+            :key="contentObj.video_url"
+            controls
+            crossorigin="anonymous"
+            playsinline
+            :poster="utils.mediaUrl(contentObj.cover_url)"
+          >
+            <source :src="vlogVideoUrl" type="video/mp4" />
+          </video>
         </div>
 
         <el-divider />
@@ -121,9 +120,10 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import ClientAPI, { type ArticleViewResult } from '@/api/client/index'
 import utils from '@/utils'
-import 'vue-plyr/dist/vue-plyr.css'
+import 'plyr/dist/plyr.css'
 import { usePageStore } from '@/stores/pageStore'
-import { hljs } from '@/config/config'
+import { hljs, plyrOptions } from '@/config/config'
+import { usePlyr } from '@/composables/usePlyr'
 import { useLangStore } from '@/stores/langStore'
 import { useI18n } from 'vue-i18n'
 import type { ContentConfig, ContentData, CommentItemConfig, ApiResponse } from '@/types/api'
@@ -157,6 +157,8 @@ const contentObj = ref<ContentConfig>({
 const prevObj = ref<ContentConfig | undefined>(undefined)
 const nextObj = ref<ContentConfig | undefined>(undefined)
 const showPlayer = ref(false)
+const videoRef = ref<HTMLVideoElement | null>(null)
+usePlyr(videoRef, plyrOptions)
 const showPreview = ref(false)
 const previewIndex = ref(0)
 const commentFormRef = ref<FormInstance | null>(null)

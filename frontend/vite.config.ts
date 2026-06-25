@@ -83,7 +83,7 @@ export default defineConfig(({ mode }) => {
 
               // 动画/打字效果
               if (id.includes('typed.js')) return 'vendor_typed_js'
-              if (id.includes('vue-plyr')) return 'vendor_vue_plyr'
+              if (id.includes('plyr')) return 'vendor_plyr'
 
               // 工具库
               if (id.includes('js-md5')) return 'vendor_js_md5'
