@@ -23,10 +23,8 @@ export default class Request {
   service: AxiosInstance;
   constructor() {
     this.service = axios.create({
-      // 生产构建默认同源 /api; 开发走 Vite 代理, baseURL 留空
-      baseURL: import.meta.env.DEV
-        ? ''
-        : ((import.meta.env.VITE_API_URL as string) || '/api'),
+      // 统一使用 /api 前缀，开发环境通过 Vite 代理转发至后端
+      baseURL: '/api',
       timeout: 60000,
       headers: {
         'Content-Type': 'application/json'
@@ -105,7 +103,7 @@ export default class Request {
             type: 'error',
             duration: 3000,
             onClose: () => {
-              window.location.pathname = '/server/login'
+              window.location.pathname = '/admin/login'
             }
           })
         } else if (status === 404) {
