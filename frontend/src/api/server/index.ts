@@ -27,6 +27,14 @@ class ServerAPI extends ApiHelper {
   // ============================================================
 
   /**
+   * GET /admin/auth/status
+   * 检查登录状态（页面刷新后恢复会话）
+   */
+  getAuthStatus() {
+    return this.get<ApiResponse<{ loggedIn: boolean; userInfo?: { id: number; username: string; is_admin: number } }>>('/admin/auth/status')
+  }
+
+  /**
    * POST /admin/auth/login
    * 管理员登录
    * @param data - { username, password }
