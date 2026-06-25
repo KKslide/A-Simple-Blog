@@ -2,7 +2,9 @@ export const clientRoutes = [
   {
     path: '/',
     component: () => import('@/views/client/index.vue'),
-    redirect: () => { return { name: 'home' } },
+    redirect: () => {
+      return { name: 'home' }
+    },
     children: [
       {
         path: 'home',
@@ -54,63 +56,68 @@ export const clientRoutes = [
           {
             path: 'scrollDemo',
             name: 'scrollDemo',
-            component: () => import('@/views/client/Portfolio/ScrollDemo.vue')
+            component: () => import('@/views/client/Portfolio/ScrollDemo.vue'),
           },
           {
             path: 'colorBG',
             name: 'colorBG',
-            component: () => import('@/views/client/Portfolio/ColorBG.vue')
+            component: () => import('@/views/client/Portfolio/ColorBG.vue'),
           },
           {
             path: 'thanosFlip',
             name: 'thanosFlip',
-            component: () => import('@/views/client/Portfolio/ThanosFlip.vue')
+            component: () => import('@/views/client/Portfolio/ThanosFlip.vue'),
           },
           {
             path: 'hoverEffect',
             name: 'hoverEffect',
-            component: () => import('@/views/client/Portfolio/HoverEffect.vue')
+            component: () => import('@/views/client/Portfolio/HoverEffect.vue'),
           },
           {
             path: 'neonLamp',
             name: 'neonLamp',
-            component: () => import('@/views/client/Portfolio/NeonLamp.vue')
+            component: () => import('@/views/client/Portfolio/NeonLamp.vue'),
           },
           {
             path: 'glitchEffect',
             name: 'glitchEffect',
-            component: () => import('@/views/client/Portfolio/GlitchEffect.vue')
+            component: () => import('@/views/client/Portfolio/GlitchEffect.vue'),
           },
           {
             path: 'echartsDrillDown',
             name: 'echartsDrillDown',
-            component: () => import('@/views/client/Portfolio/EchartsDrillDown.vue')
+            component: () => import('@/views/client/Portfolio/EchartsDrillDown.vue'),
           },
           {
             path: 'waterfall',
             name: 'waterfall',
-            component: () => import('@/views/client/Portfolio/Waterfall.vue')
+            component: () => import('@/views/client/Portfolio/Waterfall.vue'),
           },
           {
             path: 'mapCluster',
             name: 'mapCluster',
-            component: () => import('@/views/client/Portfolio/MapCluster.vue')
+            component: () => import('@/views/client/Portfolio/MapCluster.vue'),
           },
           {
             path: 'sticker',
             name: 'sticker',
-            component: () => import('@/views/client/Portfolio/StickerDemo.vue')
+            component: () => import('@/views/client/Portfolio/StickerDemo.vue'),
           },
           {
             path: 'snake',
             name: 'snake',
-            component: () => import('@/views/client/Portfolio/Snake.vue')
+            component: () => import('@/views/client/Portfolio/Snake.vue'),
           },
           {
             path: 'someEffects',
             name: 'someEffects',
-            component: () => import('@/views/client/Portfolio/SomeEffects.vue')
-          }
+            component: () => import('@/views/client/Portfolio/SomeEffects.vue'),
+          },
+          {
+            path: 'pretextDialog',
+            name: 'pretextDialog',
+            component: () => import('@/views/client/Portfolio/PretextDialog.vue'),
+          },
         ],
       },
     ],

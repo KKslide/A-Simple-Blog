@@ -16,6 +16,7 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
+    "@chenglou/pretext": "^0.0.8",
     "@element-plus/icons-vue": "^2.3.2",
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-vue": "^5.1.12",
@@ -30,16 +31,15 @@
     "normalize.css": "^8.0.1",
     "pdfjs-dist": "^5.4.149",
     "pinia": "^3.0.3",
+    "plyr": "^3.7.8",
     "typed.js": "^2.1.0",
     "vue": "^3.5.22",
     "vue-i18n": "^11.1.12",
-    "vue-plyr": "^7.0.0",
     "vue-router": "^4.6.3"
   },
   "devDependencies": {
     "@tsconfig/node22": "^22.0.2",
     "@types/node": "^22.18.11",
-    "@types/typed.js": "^2.0.9",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",
     "@vue/eslint-config-typescript": "^14.6.0",
