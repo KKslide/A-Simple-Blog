@@ -39,6 +39,7 @@ router.post("/pic/upload", qiniuUpload.picUpload);
  * 请求体: multipart/form-data, 字段名 "file"
  * 响应: { code: 1, msg: "上传成功", data: { imageUrl: string } }
  */
+// mark 可用nginx替换 → client_max_body_size 10m; (在 /api/pic location 中限制上传大小)
 router.post("/pic/img_upload", async (req, res) => {
   const uploadDir = path.join(__dirname, "../upload");
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });

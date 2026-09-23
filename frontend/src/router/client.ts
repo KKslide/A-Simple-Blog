@@ -113,11 +113,6 @@ export const clientRoutes = [
             name: 'someEffects',
             component: () => import('@/views/client/Portfolio/SomeEffects.vue'),
           },
-          {
-            path: 'pretextDialog',
-            name: 'pretextDialog',
-            component: () => import('@/views/client/Portfolio/PretextDialog.vue'),
-          },
         ],
       },
     ],

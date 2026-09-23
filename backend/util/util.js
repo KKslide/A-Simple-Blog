@@ -11,6 +11,8 @@ module.exports = {
   },
   /**
    * 从请求中读取客户端 IP (兼容反向代理自定义头)
+   * mark 可用nginx简化 → proxy_set_header X-Real-IP $remote_addr;
+   *   nginx 作为唯一反代时，可移除 x-wq-realip/connection.remoteAddress 等多余回退
    */
   getClientIp(req) {
     try {

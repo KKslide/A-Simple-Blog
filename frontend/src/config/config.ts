@@ -137,12 +137,6 @@ const portfoliosList = [
     description: 'Some effects',
     routeName: 'someEffects',
   },
-  {
-    name: 'Pretext Dialog',
-    img: 'https://jpuboss.janime.cn/6a3b51376b58338796bae048',
-    description: '用Pretext做的对话框',
-    routeName: 'pretextDialog',
-  },
 ]
 
 // 图片上传配置
