@@ -1,0 +1,5 @@
+# pnpm 11 构建脚本授权配置（原 package.json 的 pnpm.onlyBuiltDependencies 迁移至此）
+# bcrypt 是原生模块、esbuild 需要下载平台二进制，均需允许其安装脚本执行
+allowBuilds:
+  bcrypt: true
+  esbuild: true

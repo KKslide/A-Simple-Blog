@@ -1,0 +1,102 @@
+#!/usr/bin/env node
+/**
+ * HTTP 服务启动入口
+ */
+
+import http from 'node:http'
+import debug from 'debug'
+import app from '../app.ts'
+import { closePool } from '../db/index.ts'
+
+const serverDebug = debug('server:server')
+
+/**
+ * Get port from environment and store in Express.
+ */
+const port = normalizePort(process.env.PORT || '8088')
+app.set('port', port)
+
+/**
+ * Create HTTP server.
+ */
+const server = http.createServer(app)
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+server.listen(port)
+server.on('error', onError)
+server.on('listening', onListening)
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+function normalizePort(val: string): number | string | false {
+  const port = parseInt(val, 10)
+
+  if (isNaN(port)) {
+    // named pipe
+    return val
+  }
+
+  if (port >= 0) {
+    // port number
+    return port
+  }
+
+  return false
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+function onError(error: NodeJS.ErrnoException) {
+  if (error.syscall !== 'listen') {
+    throw error
+  }
+
+  const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges')
+      process.exit(1)
+      break
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use')
+      process.exit(1)
+      break
+    default:
+      throw error
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+function onListening() {
+  const addr = server.address()
+  const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr?.port
+  serverDebug('Listening on ' + bind)
+}
+
+/**
+ * 优雅关闭：收到终止信号后先关闭 HTTP 服务，再关闭数据库连接池
+ */
+function gracefulShutdown(signal: string) {
+  console.log(`\n收到 ${signal} 信号，开始优雅关闭...`)
+  server.close(async () => {
+    console.log('HTTP 服务已关闭')
+    await closePool()
+    process.exit(0)
+  })
+  // 超时 10 秒强制退出
+  setTimeout(() => {
+    console.error('优雅关闭超时，强制退出')
+    process.exit(1)
+  }, 10000)
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'))
+process.on('SIGINT', () => gracefulShutdown('SIGINT'))

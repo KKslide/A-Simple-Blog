@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2023"],
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    // TS 5.7+：源码相对导入可直接写 .ts，编译产物自动改写为 .js（Node 运行时要求）
+    "rewriteRelativeImportExtensions": true,
+    "sourceMap": true,
+    "declaration": false
+  },
+  "include": ["src"]
+}
