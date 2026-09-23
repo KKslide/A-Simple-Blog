@@ -293,6 +293,7 @@
 <script setup lang="ts">
 import ServerAPI from '@/api/server'
 import utils from '@/utils'
+import { uploadFile } from '@/utils/upload'
 import { ref, reactive, shallowRef, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor } from '@wangeditor/editor'
@@ -327,15 +328,14 @@ const handleCreated = (editor: IDomEditor) => {
       ElMessage.warning('只能上传图片文件')
       return
     }
-    const tempForm = new FormData()
-    tempForm.append('file', file)
-    ServerAPI.picUpload(tempForm).then((res) => {
-      if (res?.code === 1 && res.data?.imageUrl) {
-        insertFn(utils.mediaUrl(res.data.imageUrl))
-      } else {
-        alert('上传失败!')
-      }
-    })
+    // 前端直传七牛云
+    uploadFile(file)
+      .then(({ url }) => {
+        insertFn(url)
+      })
+      .catch(() => {
+        ElMessage.error('图片上传失败')
+      })
   }
 }
 
@@ -490,17 +490,13 @@ function handleCrop(files: UploadFile) {
 function uploadHandler(file: Blob) {
   const ext = file.type.split('/')[1] || 'jpg'
   const filename = `cover_${Date.now()}.${ext}`
-  const uploadFile = new File([file], filename, { type: file.type || 'image/jpeg' })
-  const formData = new FormData()
-  formData.append('file', uploadFile)
-  ServerAPI.picUpload(formData)
-    .then((res) => {
-      const url = res.data?.imageUrl
-      if (res.code === 1 && url) {
-        ElMessage.success('封面上传成功~')
-        articleFrom.cover_url = url
-        closeCropper()
-      }
+  const coverFile = new File([file], filename, { type: file.type || 'image/jpeg' })
+  // 前端直传七牛云
+  uploadFile(coverFile)
+    .then(({ url }) => {
+      ElMessage.success('封面上传成功~')
+      articleFrom.cover_url = url
+      closeCropper()
     })
     .catch(() => {
       ElMessage.error('封面上传失败')

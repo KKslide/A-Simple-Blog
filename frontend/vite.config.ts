@@ -81,6 +81,9 @@ export default defineConfig(({ mode }) => {
               if (id.includes('js-md5')) return 'vendor_js_md5'
               if (id.includes('dayjs')) return 'vendor_dayjs'
 
+              // 对象存储直传（仅管理端上传用到，独立分包避免混入公共 vendor）
+              if (id.includes('qiniu-js')) return 'vendor_qiniu'
+
               // ECharts 按模块拆分
               if (id.includes('echarts/core')) return 'echarts-core'
               if (id.includes('echarts/charts')) return 'echarts-charts'

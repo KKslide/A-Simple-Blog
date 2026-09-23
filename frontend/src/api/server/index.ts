@@ -14,6 +14,7 @@ import ApiHelper from '@/api/apiCaller.js'
 import type {
   ApiResponse,
   UploadResponse,
+  UploadTokenData,
   ArticleItem,
   CategoryItem,
   CommentItem,
@@ -31,7 +32,12 @@ class ServerAPI extends ApiHelper {
    * 检查登录状态（页面刷新后恢复会话）
    */
   getAuthStatus() {
-    return this.get<ApiResponse<{ loggedIn: boolean; userInfo?: { id: number; username: string; is_admin: number } }>>('/admin/auth/status')
+    return this.get<
+      ApiResponse<{
+        loggedIn: boolean
+        userInfo?: { id: number; username: string; is_admin: number }
+      }>
+    >('/admin/auth/status')
   }
 
   /**
@@ -40,7 +46,10 @@ class ServerAPI extends ApiHelper {
    * @param data - { username, password }
    */
   userLogin(data: Record<string, unknown>) {
-    return this.post<ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>, Record<string, unknown>>('/admin/auth/login', data)
+    return this.post<
+      ApiResponse<{ userInfo: { id: number; username: string; is_admin: number } }>,
+      Record<string, unknown>
+    >('/admin/auth/login', data)
   }
 
   /**
@@ -212,11 +221,24 @@ class ServerAPI extends ApiHelper {
 
   /**
    * POST /pic/img_upload
-   * 本地图片上传
+   * 本地图片上传（文件经后端落盘到 backend/upload）
    * @param img - FormData，包含 file 字段
    */
   picUpload(img: FormData) {
     return this.post<UploadResponse, FormData>('/pic/img_upload', img)
+  }
+
+  /**
+   * POST /pic/token
+   * 签发七牛云直传凭证（前端直传）
+   *
+   * 后端只负责签名，不接触文件；前端拿到 token 后用 qiniu-js 直传七牛。
+   * 一般无需直接调用，请使用 @/utils/upload 的 uploadFile()
+   *
+   * @param filename - 原始文件名，服务端据此推导资源 key 的扩展名
+   */
+  getUploadToken(filename: string) {
+    return this.post<ApiResponse<UploadTokenData>, { filename: string }>('/pic/token', { filename })
   }
 }
 

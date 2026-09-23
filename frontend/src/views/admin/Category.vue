@@ -138,8 +138,8 @@
 <script setup lang="ts">
 import ServerAPI from '@/api/server'
 import utils from '@/utils'
+import { uploadFile } from '@/utils/upload'
 import { ref, reactive, onMounted } from 'vue'
-import type { UploadResponse } from '@/types/api'
 import { ElMessage, type UploadFile } from 'element-plus'
 import { imageAcceptTypes, isValidImageFile } from '@/config/config'
 
@@ -271,23 +271,16 @@ function uploadHandler(file: UploadFile) {
     return
   }
 
-  const ImgForm = new FormData()
-  ImgForm.append('file', file.raw)
-
-  ServerAPI.picUpload(ImgForm)
-    .then((res: UploadResponse) => {
-      if (res.code === 1 && res.data?.imageUrl) {
-        categoryDetail.banner_url = res.data.imageUrl
-        tempUrl.value = (URL.createObjectURL(file.raw as File) || file.url) as string
-        ElMessage.success('图片已上传')
-      } else {
-        ElMessage.error('图片上传失败')
-      }
+  // 前端直传七牛云
+  uploadFile(file.raw)
+    .then(({ url }) => {
+      categoryDetail.banner_url = url
+      tempUrl.value = (URL.createObjectURL(file.raw as File) || file.url) as string
+      ElMessage.success('图片已上传')
     })
     .catch(() => {
       ElMessage.error('图片上传失败')
     })
-
 }
 
 function setIdColumn({ column }: { row: CategoryItem; column: unknown; rowIndex: number }) {

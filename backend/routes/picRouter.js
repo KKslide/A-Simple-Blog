@@ -1,11 +1,12 @@
 /**
  * 媒体上传路由
  *
- * POST /pic/upload    - 七牛云上传
+ * POST /pic/upload     - 七牛云上传（后端中转，方案 A）
  * POST /pic/img_upload - 本地上传
+ * POST /pic/token      - 签发七牛直传凭证（前端直传，仅签名不接触文件）
  *
  * 注意：路由前缀 /pic 在 app.js 中通过 app.use("/api", picRouter) 挂载
- *       完整路径为 /api/pic/upload 和 /api/pic/img_upload
+ *       完整路径为 /api/pic/upload、/api/pic/img_upload 和 /api/pic/token
  *
  * 安全：所有上传接口均需登录验证
  */
@@ -21,6 +22,8 @@ const authMiddleware = require("../middleware/auth.js");
 
 /* 七牛云图片上传 */
 const qiniuUpload = require('../lib/qiniuModule.js');
+/* 七牛云直传凭证签发 */
+const { createUploadToken } = require('../lib/qiniuToken.js');
 
 // 🔒 上传接口需要登录验证
 router.use(authMiddleware);
@@ -32,6 +35,26 @@ router.use(authMiddleware);
  * 响应: { status: '200', imageUrl: string }
  */
 router.post("/pic/upload", qiniuUpload.picUpload);
+
+/**
+ * POST /pic/token
+ * 签发七牛云直传凭证（前端直传）
+ *
+ * 请求体: { filename?: string }  —— 仅用于推导资源 key 的扩展名与可读前缀
+ * 响应:   { code: 1, msg, data: { token, key, imageUrl, expires } }
+ *
+ * 前端拿到后在浏览器里直接把文件传到七牛，文件不经过本服务。
+ * 凭证已被限定为「只能写入这一个 key」，有效期 1 小时，且不可覆盖。
+ */
+router.post("/pic/token", (req, res) => {
+  const { filename } = req.body || {};
+  const credential = createUploadToken(filename);
+
+  if (!credential) {
+    return fail(res, "七牛云凭证未配置，请联系管理员", 500);
+  }
+  return success(res, { msg: "签发成功", data: credential });
+});
 
 /**
  * POST /pic/img_upload
