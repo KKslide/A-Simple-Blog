@@ -113,6 +113,11 @@ export const clientRoutes = [
             name: 'someEffects',
             component: () => import('@/views/client/Portfolio/SomeEffects.vue'),
           },
+          {
+            path: 'turntable',
+            name: 'turntable',
+            component: () => import('@/views/client/Portfolio/MikuTurntable/index.vue'),
+          },
         ],
       },
     ],

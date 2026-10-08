@@ -375,13 +375,163 @@ watch(() => langStore.currentLang, resetForm)
       margin: 0 15px;
     }
   }
+  /*
+   * 正文排版
+   *
+   * 背景：富文本由 wangEditor 产出，但编辑器那一整套排版样式挂在
+   * `.w-e-text-container [data-slate-editor]` 下 —— 那个容器只存在于编辑器组件内部，
+   * 文章页渲染的 .content_html 匹配不到，于是正文全靠浏览器默认样式：
+   *   · line-height 落到 normal（≈1.15），中文长文读起来非常挤 —— 这是「行距太密」的根因
+   *   · 表格无边框、单元格 padding 只有 1px
+   *   · pre 无内边距无背景
+   * 这里把编辑器缺失的排版补齐，数值参考编辑器自身（p margin 15px、行高 1.5）并略微放宽。
+   */
   :deep(.content_html) {
+    /* 行高是全篇基准：1.75 对中文长文最舒展（原 normal≈1.15 是问题所在） */
+    line-height: 1.75;
+    color: #24292f;
+    word-wrap: break-word;
+
+    /* ---------- 段落 ---------- */
+    p {
+      margin: 18px 0;
+    }
+
+    /* ---------- 标题 ---------- */
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin: 30px 0 16px;
+      line-height: 1.35;
+      font-weight: 600;
+    }
+
+    h1 {
+      font-size: 26px;
+    }
+
+    h2 {
+      font-size: 22px;
+    }
+
+    h3 {
+      font-size: 19px;
+    }
+
+    h4 {
+      font-size: 17px;
+    }
+
+    h5 {
+      font-size: 16px;
+    }
+
+    h6 {
+      font-size: 15px;
+      color: #57606a;
+    }
+
+    /* ---------- 列表 ---------- */
+    ul,
+    ol {
+      margin: 18px 0;
+      padding-left: 26px;
+    }
+
+    li {
+      margin: 8px 0;
+
+      /* 嵌套列表收紧一点，避免层级间空隙过大 */
+      > ul,
+      > ol {
+        margin: 8px 0;
+      }
+    }
+
+    /* ---------- 引用 ---------- */
+    blockquote {
+      margin: 18px 0;
+      padding: 10px 16px;
+      border-left: 4px solid #d0d7de;
+      background: #f6f8fa;
+      color: #57606a;
+
+      > :first-child {
+        margin-top: 0;
+      }
+
+      > :last-child {
+        margin-bottom: 0;
+      }
+    }
+
+    /* ---------- 行内代码 ---------- */
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(175, 184, 193, 0.24);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    /* ---------- 分隔线 ---------- */
+    hr {
+      margin: 28px 0;
+      border: 0;
+      border-top: 1px solid #d8dee4;
+    }
+
+    /* ---------- 表格 ---------- */
+    table {
+      width: 100%;
+      margin: 18px 0;
+      border-collapse: collapse;
+      font-size: 0.95em;
+    }
+
+    th,
+    td {
+      padding: 8px 12px;
+      border: 1px solid #d0d7de;
+      text-align: left;
+    }
+
+    th {
+      background: #f6f8fa;
+      font-weight: 600;
+    }
+
+    /* ---------- 图片 ---------- */
+    img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    /* ---------- 代码块（覆盖上面的行内样式） ---------- */
     pre {
       position: relative;
+      margin: 18px 0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      /* 与 highlight.js 的 github-dark 主题同底色，避免样式加载前闪白 */
+      background: #0d1117;
+
       &:hover .copy-btn {
         opacity: 1;
       }
+
+      code {
+        padding: 0;
+        background: none;
+        font-size: 13px;
+        line-height: 1.6;
+      }
     }
+
     .copy-btn {
       position: absolute;
       top: 6px;
@@ -393,33 +543,43 @@ watch(() => langStore.currentLang, resetForm)
       font-size: 12px;
       line-height: 1;
       color: #999;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 4px;
       cursor: pointer;
       opacity: 0;
-      transition: opacity .2s, color .2s, background .2s, border-color .2s;
+      transition:
+        opacity 0.2s,
+        color 0.2s,
+        background 0.2s,
+        border-color 0.2s;
       z-index: 10;
+
       &:hover {
         color: #fff;
-        background: rgba(255,255,255,0.15);
-        border-color: rgba(255,255,255,0.3);
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
       }
+
       &.copied {
         color: #67c23a;
-        border-color: rgba(103,194,58,0.3);
-        background: rgba(103,194,58,0.08);
+        border-color: rgba(103, 194, 58, 0.3);
+        background: rgba(103, 194, 58, 0.08);
       }
     }
+
     a {
       color: #032666;
       text-decoration: underline;
     }
+
+    /* 含图段落走 flex 横排，图固定高 200px（比正文的 max-width:100% 更具体，会覆盖它） */
     p.has_image {
       display: flex;
       justify-content: flex-start;
       flex-wrap: wrap;
       align-items: center;
+
       img {
         height: 200px;
         object-fit: contain;

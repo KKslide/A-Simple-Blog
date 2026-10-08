@@ -137,6 +137,12 @@ const portfoliosList = [
     description: 'Some effects',
     routeName: 'someEffects',
   },
+  {
+    name: 'Miku-Turntable 🎵',
+    img: 'https://jpuboss.janime.cn/6ab0a5e84a49e74c22e721bc',
+    description: '初音未来主题唱片机 · 点唱片放歌，歌词跟着滚动',
+    routeName: 'turntable',
+  },
 ]
 
 // 图片上传配置

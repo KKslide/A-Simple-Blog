@@ -1,0 +1,517 @@
+@use '../../styles/units' as *;
+
+/*
+ * 唱片机弹窗
+ *
+ * 尺寸全部沿用小程序设计稿数值，经 rpx() 换算为随容器等比缩放的长度
+ * （1 设计单位 = 容器宽度 / 750），因此比例与原设计完全一致。
+ *
+ * 相对小程序版的定位改动：
+ * - 原版弹窗层是 position: fixed 铺满视口；这里改为 absolute 铺满「手机外框」，
+ *   让整个唱片机活在手机屏幕内，而不是盖住整个网页
+ * - 关闭按钮同理：从相对视口改为相对外框，故放在遮罩层下而非弹窗内
+ */
+
+/* ---------------------------- 遮罩与过渡 ---------------------------- */
+
+.music-popup-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 手机里不出现滚动条（弹窗内容超高时可滚，但不露条） */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+/* 进场：遮罩淡入 + 弹窗轻微放大上浮，比纯淡入更有「弹出来」的手感 */
+.miku-popup-enter-active,
+.miku-popup-leave-active {
+  transition: opacity 0.28s ease;
+}
+
+.miku-popup-enter-active .music-popup,
+.miku-popup-leave-active .music-popup {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.miku-popup-enter-from,
+.miku-popup-leave-to {
+  opacity: 0;
+}
+
+.miku-popup-enter-from .music-popup,
+.miku-popup-leave-to .music-popup {
+  transform: translateY(rpx(40)) scale(0.94);
+}
+
+/* ---------------------------- 弹窗骨架 ---------------------------- */
+
+.music-popup-outer {
+  width: 100%;
+  min-height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: rpx(48) rpx(48) rpx(80);
+  box-sizing: border-box;
+}
+
+.music-popup-loading {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: rpx(260);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: rpx(24);
+  z-index: 6;
+}
+
+.music-popup-loading-spinner {
+  width: rpx(60);
+  height: rpx(60);
+  border: rpx(4) solid rgba(255, 255, 255, 0.2);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: music-popup-spin 0.8s linear infinite;
+}
+
+.music-popup-loading-text {
+  font-size: rpx(28);
+  color: #ffffff;
+  opacity: 0.8;
+}
+
+.music-popup {
+  position: relative;
+  width: rpx(550);
+  height: rpx(830);
+  margin-top: rpx(196);
+  padding: 0 rpx(24) rpx(44);
+  box-sizing: border-box;
+  border: rpx(8) solid #7dc5c1;
+  border-radius: rpx(47);
+  box-shadow: 0 0 rpx(40) rpx(16) rgba(184, 240, 238, 0.24);
+  background: linear-gradient(180deg, #9adfdb 0%, #e6f5f6 100%);
+}
+
+.music-popup-main {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.music-popup-main--ready {
+  opacity: 1;
+  visibility: visible;
+}
+
+.music-popup::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: rpx(47);
+  background-image: url('https://jpuboss.janime.cn/6a27cbaf6b58338796bae023');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: rpx(550) rpx(830);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.music-popup-close {
+  position: absolute;
+  top: rpx(206);
+  right: rpx(60);
+  width: rpx(42);
+  height: rpx(42);
+  object-fit: cover;
+  cursor: pointer;
+  z-index: 10;
+}
+
+.music-popup-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: rpx(24);
+  position: relative;
+  z-index: 2;
+}
+
+.music-popup-title--card {
+  position: relative;
+  height: rpx(50);
+  margin: rpx(40) auto rpx(52);
+}
+
+.music-popup-title-image {
+  height: rpx(50);
+  object-fit: contain;
+}
+
+.music-popup-note {
+  position: absolute;
+  z-index: 2;
+}
+
+.music-popup-note--left {
+  top: rpx(254);
+  left: rpx(-21);
+  width: rpx(42);
+  height: rpx(50);
+  object-fit: contain;
+}
+
+.music-popup-note--right {
+  top: rpx(180);
+  right: rpx(-21);
+  width: rpx(42);
+  height: rpx(44);
+  object-fit: contain;
+}
+
+/* 原版 mode="widthFix"：宽度撑满、高度按比例自算 */
+.music-popup-cover {
+  position: absolute;
+  left: calc(50% - #{rpx(10)});
+  top: rpx(-8);
+  width: rpx(750);
+  height: auto;
+  transform: translateX(-50%);
+  z-index: 4;
+  pointer-events: none;
+}
+
+/* ---------------------------- 唱机 ---------------------------- */
+
+.music-card {
+  position: relative;
+  margin: 0 auto;
+  width: rpx(348);
+  z-index: 2;
+}
+
+.music-card__tonearm-anchor {
+  position: absolute;
+  left: rpx(-64);
+  top: rpx(-46);
+  z-index: 5;
+  width: rpx(273);
+  height: rpx(98);
+}
+
+/*
+ * 拨杆起落 —— 已按接入文档恢复动画
+ *
+ * 原版被「锁」在放下状态（写死 rotate(16deg)）。这里恢复成：
+ *   默认抬起 0deg，播放时落下 16deg，音频异常时抬起
+ * 原点 84,68 是拨杆的转轴位置，不能改，否则会绕着错的地方转
+ */
+.music-card__tonearm {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: rpx(273);
+  height: rpx(98);
+  object-fit: contain;
+  transform-origin: rpx(84) rpx(68);
+  transform: rotate(0deg);
+  transition: transform 0.28s ease;
+}
+
+.music-card__tonearm--playing {
+  transform: rotate(16deg);
+}
+
+.music-card__tonearm--blocked {
+  transform: rotate(0deg);
+}
+
+.music-card__panel {
+  width: 100%;
+  height: rpx(216);
+  position: relative;
+  overflow: visible;
+}
+
+.music-card__tray {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: rpx(348);
+  height: rpx(216);
+  object-fit: contain;
+  z-index: 1;
+}
+
+/*
+ * 唱片旋转 —— 已按接入文档恢复动画
+ *
+ * 原版的条件是 isPlaying && hasPlayEffect（只有带动效的款才转），
+ * 这里简化成「播放中就转」：真实唱机本就如此，也让每首歌都有转的反馈。
+ * playEffect 仍然保留，但只用来决定要不要叠那层 APNG 点缀。
+ *
+ * animation-play-state 切换而非增删 animation，暂停后从原角度继续，不会跳回 0 度
+ */
+.music-card__disc {
+  position: absolute;
+  left: rpx(6);
+  top: rpx(-10);
+  width: rpx(234);
+  height: rpx(234);
+  border-radius: 50%;
+  object-fit: contain;
+  animation: record-spin 5.5s linear infinite;
+  animation-play-state: paused;
+  will-change: transform;
+  z-index: 2;
+}
+
+.music-card__disc--placeholder {
+  background: linear-gradient(180deg, #b6ebe6 0%, #90d9d1 100%);
+}
+
+.music-card__disc--playing {
+  animation-play-state: running;
+}
+
+/* ---------------------------- 歌词 ---------------------------- */
+
+.lyrics-panel {
+  margin: rpx(30) auto 0;
+  width: 100%;
+  height: rpx(228);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: rpx(10);
+  text-align: center;
+  position: relative;
+  z-index: 5;
+}
+
+.lyrics-line {
+  font-size: rpx(24);
+  line-height: 1.5;
+  font-weight: normal;
+  color: #5ab2c5;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  display: flex;
+  justify-content: center;
+}
+
+.lyrics-line__inner {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 100%;
+}
+
+.lyrics-line__text {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+  color: #5ab2c5;
+}
+
+/* 当前播放行高亮：配合模板里 index === 2 的 --active 绑定 */
+.lyrics-line__text--active {
+  color: #cb5481;
+}
+
+.lyrics-line__text--fade-top {
+  /* 渐变色跟随歌词色 #5ab2c5（rgb 90,178,197） */
+  background: linear-gradient(
+    180deg,
+    rgba(90, 178, 197, 0.06) 0%,
+    rgba(90, 178, 197, 0.18) 28%,
+    rgba(90, 178, 197, 0.42) 52%,
+    rgba(90, 178, 197, 0.86) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ---------------------------- 进度条 ---------------------------- */
+
+/*
+ * 进度条容器：同时是拖拽热区
+ *
+ * 高度从 24rpx 加到 44rpx 手指才按得准；margin-top 从 26rpx 减到 6rpx，
+ * 两者之和仍是 50rpx，所以下面的播放键位置不动。
+ *
+ * 容器顶边上移了 20rpx，里面的 track / dot 要把这 20rpx 补回来、位置才不会跟着窜：
+ *   track：26 + 9 = 35  →  6 + 29 = 35
+ *   dot  ：26 - 1 = 25  →  6 + 19 = 25
+ * 改这两个 top 时按「margin-top + top 保持不变」来算。
+ */
+.progress-wrap {
+  margin: rpx(6) auto 0;
+  width: rpx(440);
+  position: relative;
+  height: rpx(44);
+  cursor: pointer;
+  /* 拖拽时不要触发浏览器的滚动/手势接管 */
+  touch-action: none;
+  user-select: none;
+  z-index: 2;
+}
+
+.progress-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: rpx(29);
+  height: rpx(4);
+  border-radius: rpx(999);
+  background: #87d3cf;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #e881aa;
+}
+
+.progress-dot {
+  position: absolute;
+  /* 原来是 -1rpx；容器顶边上移 20rpx，这里 +20rpx 补回来 */
+  top: rpx(20);
+  width: rpx(16);
+  height: rpx(16);
+  margin-left: rpx(-8);
+  border-radius: 50%;
+  /* 原版写的是 2px（设计稿里混用了 px），换算过来是 4rpx，这里统一成设计单位 */
+  border: rpx(4) solid #e881aa;
+  background: #fff;
+  box-shadow: 0 0 rpx(25) rpx(4) #ffffff;
+}
+
+/* ---------------------------- 播放动效点缀 ---------------------------- */
+
+/*
+ * 播放动效点缀（play_effect: sakura / snow / hidden 三张 APNG）
+ *
+ * 尺寸与定位：
+ * - 宽 750rpx = 屏幕满宽（原图也是 750 宽）
+ * - 高 996rpx = 弹窗 830rpx 上下各外扩 10%（各 83rpx）
+ * - 绝对定位的参照是 .music-popup 的「内边距盒」，比边框盒左右各内缩 8rpx，故偏移量都要再减 8rpx：
+ *     水平：弹窗 550rpx 居中于 750rpx 屏 → 边框盒左边缘在 100rpx 处 → 0 - (100 + 8) = -108rpx
+ *     垂直：上边缘在弹窗顶部上方 83rpx 处 → -83 - 8 = -91rpx
+ *   弹窗尺寸/边框/外边距调整时，这里要同步（当前基于 .music-popup-outer padding 48rpx + margin-top 196rpx）
+ * - pointer-events: none 是关键：点缀铺满整屏但绝不拦截播放/暂停/关闭的点击
+ * - z-index 6：在封面(4)、歌词(5)之上，关闭按钮(10)之下
+ */
+.music-popup-effect {
+  position: absolute;
+  top: rpx(-91);
+  left: rpx(-108);
+  width: rpx(750);
+  height: rpx(996);
+  object-fit: cover;
+  pointer-events: none;
+  z-index: 6;
+}
+
+/* ---------------------------- 播放键 ---------------------------- */
+
+.music-actions {
+  margin-top: rpx(12);
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 2;
+}
+
+.music-actions__button {
+  width: rpx(82);
+  height: rpx(82);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.music-actions__button--disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.music-actions__button:not(.music-actions__button--playing) {
+  background-image: url('https://jpuboss.janime.cn/6a27cc7b6b58338796bae025');
+}
+
+.music-actions__button--playing {
+  background-image: url('https://jpuboss.janime.cn/6a27cc6d6b58338796bae024');
+}
+
+/*
+ * 缓冲转圈：盖在播放键正中间
+ * pointer-events: none 是关键 —— 缓冲中用户仍要能点暂停/播放
+ */
+.music-buffering {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: rpx(82);
+  height: rpx(82);
+  margin: rpx(-41) 0 0 rpx(-41);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.music-buffering__spinner {
+  width: rpx(48);
+  height: rpx(48);
+  border: rpx(4) solid rgba(255, 255, 255, 0.6);
+  border-top-color: #e881aa;
+  border-radius: 50%;
+  animation: music-popup-spin 0.8s linear infinite;
+}
+
+.music-error {
+  margin-top: rpx(18);
+  text-align: center;
+  font-size: rpx(22);
+  color: #d65858;
+  position: relative;
+  z-index: 2;
+}
+
+/* ---------------------------- 动画 ---------------------------- */
+
+@keyframes record-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes music-popup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

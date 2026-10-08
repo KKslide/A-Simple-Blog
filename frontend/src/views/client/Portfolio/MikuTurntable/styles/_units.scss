@@ -1,0 +1,27 @@
+////
+/// 单位换算：小程序 rpx → Web 等比长度
+///
+/// 小程序的 rpx 是「按 750 设计宽等比缩放」：750rpx 恒等于屏幕宽度。
+/// Web 没有等价单位，这里用 CSS 变量复刻同一套语义：
+///
+///   --rpx = 容器宽度 / 750      （由使用方在容器上定义）
+///   rpx(N) = N × var(--rpx)
+///
+/// 好处：
+///   - 源码读起来和原小程序一致（width: rpx(550) 就是原来的 550rpx）
+///   - 等比缩放任容器宽度决定，不写死像素，缩放时比例不失真
+///   - 配合 container query 单位 cqw，容器多宽都自动适配
+///
+/// 用法：
+///   .phone-screen { --rpx: calc(100cqw / 750); }
+///   .popup { width: rpx(550); }
+////
+
+/// 设计稿宽度（小程序的 750rpx）
+$design-width: 750;
+
+/// 把设计稿数值（原 rpx 数）换算为随容器自适应的长度
+/// @param {Number} $value 设计稿上的数值，等价于原来的 N rpx
+@function rpx($value) {
+  @return calc(#{$value} * var(--rpx));
+}
