@@ -138,10 +138,16 @@ const portfoliosList = [
     routeName: 'someEffects',
   },
   {
-    name: 'Miku-Turntable 🎵',
+    name: 'Turntable 🎵',
     img: 'https://jpuboss.janime.cn/6ab0a5e84a49e74c22e721bc',
     description: '初音未来主题唱片机 · 点唱片放歌，歌词跟着滚动',
     routeName: 'turntable',
+  },
+  {
+    name: 'ascii Sharks 🦈',
+    img: 'https://carddevo.card.fun/6adb216d4533429d79fdc7c2',
+    description: '纯 ASCII 字符绘制的鲨鱼与鱼群生态 · 移动鼠标、点击水面试试',
+    routeName: 'asciiSharks',
   },
 ]
 

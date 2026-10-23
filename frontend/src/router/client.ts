@@ -118,6 +118,11 @@ export const clientRoutes = [
             name: 'turntable',
             component: () => import('@/views/client/Portfolio/MikuTurntable/index.vue'),
           },
+          {
+            path: 'asciiSharks',
+            name: 'asciiSharks',
+            component: () => import('@/views/client/Portfolio/AsciiSharks/index.vue'),
+          },
         ],
       },
     ],
