@@ -87,11 +87,15 @@ export default defineConfig(({ mode }) => {
               if (id.includes('qiniu-js')) return 'vendor_qiniu'
 
               // ECharts 按模块拆分
+              // echarts-gl / bmap 扩展体积较大, 单独分包, 避免混入入口预加载的 vendor
+              if (id.includes('echarts-gl')) return 'vendor_echarts_gl'
+              if (id.includes('echarts/extension')) return 'vendor_echarts_ext'
               if (id.includes('echarts/core')) return 'echarts-core'
               if (id.includes('echarts/charts')) return 'echarts-charts'
               if (id.includes('echarts/components')) return 'echarts-components'
               if (id.includes('echarts/features')) return 'echarts-features'
               if (id.includes('echarts/renderers')) return 'echarts-renderers'
+              if (id.includes('echarts')) return 'vendor_echarts'
 
               // 其他未分类的 node_modules
               return 'vendor'

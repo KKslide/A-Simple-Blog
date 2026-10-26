@@ -1,0 +1,129 @@
+.hzy-pin-container {
+  position: relative;
+  // width: 200px;
+  // height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.hzy-count {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  z-index: 12;
+  color: #fff;
+  // background: rgba(0, 0, 0, 0.25);
+  max-width: 30px;
+  text-align: center;
+  font-size: 14px;
+}
+
+/* 涟漪效果 */
+.hzy-pin-container::before,
+.hzy-pin-container::after {
+  content: '';
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+  opacity: 0.6;
+  position: absolute;
+  bottom: 10px;
+  border-radius: 50%;
+  box-sizing: border-box;
+  box-shadow: 0 0 10px 2px rgba(255, 0, 0, 0.7),
+              inset 0 0 10px 2px rgba(255, 0, 0, 0.7);
+  transform: scale(0);
+}
+
+.hzy-pin-container::before {
+  animation: 1.5s linear 0s infinite forwards hzy-blink;
+}
+
+.hzy-pin-container::after {
+  animation: 1.5s linear 0.8s infinite forwards hzy-blink;
+}
+
+/* 图钉 */
+.hzy-pin {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  background: radial-gradient(circle at 50% 30%, #ff8a8a, #d32f2f, #b71c1c);
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  margin-bottom: 25px;
+  /* 调整图钉相对于涟漪的位置 */
+  filter: drop-shadow(0 0 5px rgba(255, 0, 0, 0.8));
+  z-index: 10;
+}
+
+.hzy-pin-container.normal {
+  .hzy-count {
+    color: #11701d;
+  }
+  .hzy-pin {
+    background: radial-gradient(circle at 50% 30%, #8aff9d, #23f153, #13c631);
+    filter: drop-shadow(0 0 5px #13c631a8);
+  }
+  &::before,
+  &::after {
+    box-shadow: 0 0 10px 2px #1eff00b3,
+    inset 0 0 10px 2px #1eff00b3;
+  }
+}
+.hzy-pin-container.warning {
+  .hzy-count {
+    color: #8b9317;
+  }
+  .hzy-pin {
+    background: radial-gradient(circle at 50% 30%, #fde498, #e3db39, #bec113);
+    filter: drop-shadow(0 0 5px #bec113a8);
+  }
+  &::before,
+  &::after {
+    box-shadow: 0 0 10px 2px #fcf51db3,
+    inset 0 0 10px 2px #fcf51db3;
+  }
+}
+.hzy-pin-container.exceed {
+  .hzy-pin {
+    background: radial-gradient(circle at 50% 30%, #ff8a8a, #d32f2f, #b71c1c);
+    filter: drop-shadow(0 0 5px #b71c1ca8);
+  }
+  &::before,
+  &::after {
+    box-shadow: 0 0 10px 2px #b71c1cb3,
+    inset 0 0 10px 2px #b71c1cb3;
+  }
+}
+.hzy-pin-container.offline {
+  .hzy-count {
+    color: #525252;
+  }
+  .hzy-pin {
+    background: radial-gradient(circle at 50% 30%, #cdcdcd, #acacac, #a0a0a0);
+    filter: drop-shadow(0 0 5px #a0a0a0a8);
+  }
+  &::before,
+  &::after {
+    box-shadow: 0 0 10px 2px #a0a0a0b3,
+    inset 0 0 10px 2px #a0a0a0b3;
+  }
+}
+
+@keyframes hzy-blink {
+  0% {
+    transform: scale(0.1);
+  }
+
+  50% {
+    transform: scale(0.8);
+  }
+
+  100% {
+    transform: scale(1.5);
+    opacity: 0.1;
+  }
+}

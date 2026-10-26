@@ -149,6 +149,12 @@ const portfoliosList = [
     description: '纯 ASCII 字符绘制的鲨鱼与鱼群生态 · 移动鼠标、点击水面试试',
     routeName: 'asciiSharks',
   },
+  {
+    name: '餐饮油烟大管家',
+    img: 'https://mypics.zhaopin.cn/small/procedures/resume/individual/works/1757411062228148397/4c2e703f-cfc0-4cec-ba7d-71a1737ca0c8.jpeg',
+    description: '基于百度地图的餐饮油烟在线监测大屏 · 已预填演示账号',
+    routeName: 'hzyLogin',
+  },
 ]
 
 // 图片上传配置

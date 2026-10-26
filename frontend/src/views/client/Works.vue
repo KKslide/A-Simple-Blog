@@ -1,16 +1,11 @@
 <template>
   <div id="work_list">
     <Card
-      :data-image="'https://mypics.zhaopin.cn/small/procedures/resume/individual/works/1757411062228148397/4c2e703f-cfc0-4cec-ba7d-71a1737ca0c8.jpeg'"
-      @click="check('/v2')">
-      <template #header>
-        <h1>Echarts & Map</h1>
-      </template>
-      <template #content>
-        <p>一个Echarts+百度地图应用</p>
-      </template>
-    </Card>
-    <Card v-for="item in list" :key="item.name" :data-image="utils.mediaUrl(item.img)" @click="check(item.routeName)">
+      v-for="item in list"
+      :key="item.name"
+      :data-image="resolveImage(item.img)"
+      @click="check(item.routeName)"
+    >
       <template #header>
         <h1>{{ item.name }}</h1>
       </template>
@@ -29,13 +24,17 @@ import utils from '@/utils'
 import { portfoliosList } from '@/config/config'
 import Card from './Widgets/Card.vue'
 const router = useRouter()
-const list = computed(() => portfoliosList.sort(() => Math.random() - 0.5))
+const list = computed(() => [...portfoliosList].sort(() => Math.random() - 0.5))
+
+/** Vite 打包的静态资源直接使用, 其余相对路径走媒体域名 */
+const resolveImage = (img: string) => {
+  if (!img) return ''
+  if (img.startsWith('http') || img.startsWith('/src/') || img.startsWith('/assets/')) return img
+  return utils.mediaUrl(img)
+}
+
 const check = (routeName: string) => {
   if (!routeName) return
-  if (routeName == '/v2') {
-    window.open('/v2')
-    return
-  }
   router.push({ name: routeName })
 }
 </script>

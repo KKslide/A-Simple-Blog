@@ -123,6 +123,26 @@ export const clientRoutes = [
             name: 'asciiSharks',
             component: () => import('@/views/client/Portfolio/AsciiSharks/index.vue'),
           },
+          {
+            path: 'hengzhiyuanMap',
+            component: () => import('@/views/client/Portfolio/HengzhiyuanMap/index.vue'),
+            children: [
+              {
+                path: '',
+                redirect: { name: 'hzyLogin' },
+              },
+              {
+                path: 'login',
+                name: 'hzyLogin',
+                component: () => import('@/views/client/Portfolio/HengzhiyuanMap/Login.vue'),
+              },
+              {
+                path: 'map',
+                name: 'hzyMap',
+                component: () => import('@/views/client/Portfolio/HengzhiyuanMap/Map.vue'),
+              },
+            ],
+          },
         ],
       },
     ],
