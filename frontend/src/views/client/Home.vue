@@ -1,7 +1,10 @@
 <template>
   <div>
-    <div id="logo_bg"></div>
-    <el-row class="typing_hello_world">
+    <Transition name="loading-fade">
+      <LoadingTicker v-if="!isReady" />
+    </Transition>
+    <div id="logo_bg" :style="bgStyle"></div>
+    <el-row v-show="isReady" class="typing_hello_world">
       <el-col :span="18" :offset="3">
         <!-- typing文字 -->
         <div id="texting_content" class="text-content">
@@ -26,10 +29,21 @@
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Typed from 'typed.js'
 import { useLangStore } from '@/stores/langStore'
+import LoadingTicker from './Widgets/LoadingTicker.vue'
 
 defineOptions({
-  name: "HomePage"
+  name: 'HomePage',
 })
+
+/** 首页背景图 */
+const BG_IMAGE = 'https://jpuboss.janime.cn/6a33bbac6b58338796bae041'
+/** 把背景图传给样式, 避免 URL 在 CSS 和 JS 里各写一份 */
+const bgStyle = { '--home-bg-image': `url("${BG_IMAGE}")` }
+/** 背景图加载失败或超时后强制放行, 避免页面一直卡在 loading */
+const PRELOAD_TIMEOUT = 15000
+
+/** 背景图是否已就绪 */
+const isReady = ref(false)
 
 let typer: Typed | null = null
 let handleMouseMove: ((event: MouseEvent) => void) | null = null
@@ -43,35 +57,58 @@ const typerConfig = ref({
 })
 
 const type = () => {
-  typer =  new Typed('#typed', typerConfig.value);
+  typer = new Typed('#typed', typerConfig.value)
+}
+
+/** 预加载背景图, 成功/失败/超时都会 resolve */
+const preloadBackground = (): Promise<void> => {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const timer = setTimeout(finish, PRELOAD_TIMEOUT)
+
+    function finish() {
+      clearTimeout(timer)
+      img.onload = null
+      img.onerror = null
+      resolve()
+    }
+
+    img.onload = finish
+    img.onerror = finish
+    img.src = BG_IMAGE
+  })
 }
 
 // 鼠标移动动画
 const setMouseEffect = () => {
-  const body = document.body;
-  const bg = document.getElementById('logo_bg');
-  const windowWidth = window.innerWidth / 5;
-  const windowHeight = window.innerHeight / 5;
+  const body = document.body
+  const bg = document.getElementById('logo_bg')
+  const windowWidth = window.innerWidth / 5
+  const windowHeight = window.innerHeight / 5
 
   handleMouseMove = (e: MouseEvent) => {
-    const mouseX = e.clientX / windowWidth;
-    const mouseY = e.clientY / windowHeight;
+    const mouseX = e.clientX / windowWidth
+    const mouseY = e.clientY / windowHeight
     if (bg) {
-      bg.style.transform = `translate3d(-${mouseX * 2}px, -${mouseY * 2}px, 0)`;
+      bg.style.transform = `translate3d(-${mouseX * 2}px, -${mouseY * 2}px, 0)`
     }
-  };
+  }
 
-  body.addEventListener('mousemove', handleMouseMove);
+  body.addEventListener('mousemove', handleMouseMove)
 }
 
-onMounted(() => {
+onMounted(async () => {
+  // 背景图就绪后再显示页面并播放打字动画
+  await preloadBackground()
+  isReady.value = true
+  await nextTick()
   type()
   setMouseEffect()
 })
 
 onBeforeUnmount(() => {
   if (handleMouseMove) {
-    document.body.removeEventListener('mousemove', handleMouseMove);
+    document.body.removeEventListener('mousemove', handleMouseMove)
   }
   typer?.destroy()
 })
@@ -79,12 +116,12 @@ onBeforeUnmount(() => {
 watch(
   () => langStore.currentLang,
   async () => {
+    if (!isReady.value) return
     typer?.destroy()
     await nextTick()
     type()
-  }
+  },
 )
-
 </script>
 
 <style lang="scss" scoped>
@@ -98,7 +135,7 @@ watch(
   // background-image: url("@/assets/img/kk-mirror.jpeg");
   // background-image: url("@/assets/img/dune-poster.png");
   // background-image: url("@/assets/img/gemini_space.png");
-  background-image: url("https://jpuboss.janime.cn/6a33bbac6b58338796bae041"); // gemini_space.png
+  background-image: var(--home-bg-image);
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -118,5 +155,14 @@ watch(
   text-shadow: 0 1px 3px #000;
   font-size: 2em;
   line-height: 1.5;
+}
+
+// loading 遮罩淡出
+.loading-fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.loading-fade-leave-to {
+  opacity: 0;
 }
 </style>

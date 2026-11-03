@@ -15,7 +15,7 @@
 defineOptions({
   name: 'CardComponent'
 })
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 const props = defineProps(['dataImage'])
 const width = ref(0)
 const height = ref(0)
@@ -23,6 +23,9 @@ const mouseX = ref(0)
 const mouseY = ref(0)
 const mouseLeaveDelay = ref(0)
 const cardRef = ref<HTMLDivElement | null>(null) // 明确类型
+/** 卡片进入视口后再加载背景图 */
+const isVisible = ref(false)
+let observer: IntersectionObserver | null = null
 const mousePX = computed(() => {
   return mouseX.value / width.value;
 })
@@ -45,6 +48,7 @@ const cardBgTransform = computed(() => {
 })
 
 const cardBgImage = computed(() => {
+  if (!isVisible.value) return {}
   return {
     backgroundImage: `url(${props.dataImage})`
   }
@@ -69,10 +73,30 @@ const handleMouseLeave = () => {
 onMounted(() => {
   const el = cardRef.value
   if (!el) return
+
   const cardItem = el.querySelector<HTMLElement>('.card-item')
-  if (!cardItem) return
-  width.value = cardItem.offsetWidth
-  height.value = cardItem.offsetHeight
+  if (cardItem) {
+    width.value = cardItem.offsetWidth
+    height.value = cardItem.offsetHeight
+  }
+
+  // 提前 200px 加载, 滚动时不会看到空白
+  observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry?.isIntersecting) return
+      isVisible.value = true
+      observer?.disconnect()
+      observer = null
+    },
+    { rootMargin: '200px' },
+  )
+  observer.observe(el)
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  observer = null
+  clearTimeout(mouseLeaveDelay.value)
 })
 </script>
 

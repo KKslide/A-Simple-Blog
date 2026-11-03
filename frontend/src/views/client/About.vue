@@ -29,11 +29,10 @@
               </el-row>
             </el-col>
             <el-col :xs="24" :sm="24" :md="12" :lg="12" :xl="12">
-              <div id="profil_img">
-                <!-- <img src="@/assets/img/profil.jpg" class="img-responsive old" />
-                <img src="@/assets/img/profil.edit.jpg" class="img-responsive young" /> -->
-                <img src="https://jpuboss.janime.cn/6a33bc8f6b58338796bae042" class="img-responsive old" />
-                <img src="https://jpuboss.janime.cn/6a33bc9b6b58338796bae043" class="img-responsive young" />
+              <div id="profil_img" ref="profilRef">
+                <!-- old 默认显示, hover 淡出后露出底层的 young -->
+                <img :src="oldImageSrc" class="img-responsive old" decoding="async" draggable="false" />
+                <img :src="youngImageSrc" class="img-responsive young" decoding="async" draggable="false" />
               </div>
             </el-col>
             <el-divider></el-divider>
@@ -56,9 +55,43 @@
 defineOptions({
   name: "AboutPage"
 })
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue'
 import PdfViewer from './Widgets/PdfViewer.vue'
 import { useI18n } from 'vue-i18n'
+
+/** 两张人像图: old 在上层, young 在底层 */
+const OLD_IMAGE = 'https://jpuboss.janime.cn/6a33bc8f6b58338796bae042'
+const YOUNG_IMAGE = 'https://jpuboss.janime.cn/6a33bc9b6b58338796bae043'
+
+const profilRef = ref<HTMLDivElement | null>(null)
+/** 图片容器进入视口后, 两张图一起加载, 避免 hover 时缺图 */
+const imagesVisible = ref(false)
+let observer: IntersectionObserver | null = null
+
+const oldImageSrc = computed(() => (imagesVisible.value ? OLD_IMAGE : undefined))
+const youngImageSrc = computed(() => (imagesVisible.value ? YOUNG_IMAGE : undefined))
+
+onMounted(() => {
+  const el = profilRef.value
+  if (!el) return
+
+  // 提前 200px 加载
+  observer = new IntersectionObserver(
+    ([entry]) => {
+      if (!entry?.isIntersecting) return
+      imagesVisible.value = true
+      observer?.disconnect()
+      observer = null
+    },
+    { rootMargin: '200px' },
+  )
+  observer.observe(el)
+})
+
+onBeforeUnmount(() => {
+  observer?.disconnect()
+  observer = null
+})
 const { t } = useI18n()
 const part1Title = computed(() => t('about.part1.title'))
 const part1Content = computed(() => t('about.part1.content'))
@@ -97,6 +130,8 @@ async function checkResume() {
       height: 100%;
       object-fit: cover;
       border-radius: 5px;
+      user-select: none;
+      -webkit-user-drag: none;
     }
 
     img.old {

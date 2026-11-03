@@ -48,6 +48,12 @@
   padding-top: 0 !important;
 }
 
+.site_content .el-main {
+  // Element Plus 默认 overflow: auto 会被 el-image 的懒加载当成滚动容器,
+  // 导致视口外的图片全部提前加载; 页面实际滚动在 body, 这里改为 visible
+  overflow: visible;
+}
+
 .site_content {
   min-height: calc(100vh - 20px);
 }
