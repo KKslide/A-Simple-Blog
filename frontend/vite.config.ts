@@ -42,6 +42,7 @@ export default defineConfig(({ mode }) => {
       // 前端产物输出到后端编译目录之下（backend 为 TS 项目，dist 归 tsc 使用，
       // 前端构建产物放在 dist/public，由后端静态服务从这里托管）
       outDir: '../backend/dist/public',
+      emptyOutDir: true,
       rollupOptions: {
         output: {
           /**
