@@ -56,7 +56,7 @@
           <el-switch
             :model-value="scope.row.is_pinned"
             inline-prompt
-            style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
+            style="--el-switch-on-color: #3375b9;"
             active-value="1"
             inactive-value="0"
             active-text="是"
@@ -70,7 +70,7 @@
           <el-switch
             :model-value="scope.row.is_published"
             inline-prompt
-            style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
+            style="--el-switch-on-color: #3375b9;"
             active-value="1"
             inactive-value="0"
             active-text="是"
@@ -153,8 +153,7 @@
           <el-form-item label="是否显示" prop="is_published">
             <el-switch
               v-model="articleFrom.is_published"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
+              style="--el-switch-on-color: #3375b9;"
               active-value="1"
               inactive-value="0"
             ></el-switch>
@@ -163,8 +162,7 @@
           <el-form-item label="是否置顶" prop="is_pinned">
             <el-switch
               v-model="articleFrom.is_pinned"
-              active-color="#13ce66"
-              inactive-color="#ff4949"
+              style="--el-switch-on-color: #3375b9;"
               active-value="1"
               inactive-value="0"
             ></el-switch>

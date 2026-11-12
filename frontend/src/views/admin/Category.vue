@@ -67,8 +67,16 @@
 
     <el-button type="default" :text="true" bg :disabled="categoryData.length >= 6" @click="open">新增分类</el-button>
 
-    <el-dialog v-if="dialogVisible" v-model="dialogVisible" :title="handleType == 'add' ? '添加分类' : '编辑分类'" width="600"
-      draggable :before-close="handleClose">
+    <el-dialog
+      v-if="dialogVisible"
+      v-model="dialogVisible"
+      width="600"
+      :title="handleType == 'add' ? '添加分类' : '编辑分类'"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :before-close="handleClose"
+      draggable
+    >
       <el-form :model="categoryDetail">
         <el-form-item label="分类名称" :label-width="90">
           <el-input v-model="categoryDetail.name" autocomplete="off" />

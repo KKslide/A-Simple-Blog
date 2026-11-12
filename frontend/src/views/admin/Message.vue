@@ -6,7 +6,7 @@
           <p>{{ formatDate(scope.row.created_at) }}</p>
         </template>
       </el-table-column>
-      <el-table-column prop="nickname" label="用户/邮箱"></el-table-column>
+      <el-table-column prop="nickname" label="用户/邮箱/IP"></el-table-column>
       <el-table-column prop="content" label="内容"></el-table-column>
       <el-table-column label="操作" width="150">
         <template #default="scope">
