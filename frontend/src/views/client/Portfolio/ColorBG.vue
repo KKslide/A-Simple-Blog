@@ -14,8 +14,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 const color=  ref('#f28c92')
-const BaseUrl = import.meta.env.VITE_MEDIA_URL
-const picUrl = BaseUrl + `/upload/upload_4ca907a03dc9832035f0af9422068a2a.JPG`
+const picUrl = 'https://video.kangyouknowwho.space/portfolio/portfolio-colorBG.JPG'
 function setColor(str: string) {
   color.value = str
 }
