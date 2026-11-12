@@ -1,5 +1,5 @@
 <template>
-  <div id="work_list">
+  <div id="portfolio_list">
     <Card
       v-for="item in list"
       :key="item.name"
@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-defineOptions({ name: 'WorksPage' })
+defineOptions({ name: 'PortfolioPage' })
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import utils from '@/utils'
@@ -40,7 +40,7 @@ const check = (routeName: string) => {
 </script>
 
 <style lang="scss" scoped>
-#work_list {
+#portfolio_list {
   padding: 30px 20px 200px 20px;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));

@@ -1,7 +1,7 @@
 <template>
   <div class="hzy-app">
     <RouterView />
-    <RouterLink class="hzy-back" :to="{ name: 'works' }">← 返回作品集</RouterLink>
+    <RouterLink class="hzy-back" :to="{ name: 'portfolio' }">← 返回作品集</RouterLink>
   </div>
 </template>
 

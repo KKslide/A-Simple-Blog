@@ -45,13 +45,13 @@ export const clientRoutes = [
         component: () => import('@/views/client/Content.vue'),
       },
       {
-        path: 'works',
-        redirect: { name: 'works' },
+        path: 'portfolio',
+        redirect: { name: 'portfolio' },
         children: [
           {
             path: '',
-            name: 'works',
-            component: () => import('@/views/client/Works.vue'),
+            name: 'portfolio',
+            component: () => import('@/views/client/Portfolio.vue'),
           },
           {
             path: 'scrollDemo',

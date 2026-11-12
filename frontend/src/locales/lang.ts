@@ -11,7 +11,7 @@ const zh = {
     Blogs: '文章 📝',
     Vlogs: 'Vlog 🎬',
     About: '关于我 🤓',
-    Works: '作品集 👨🏻‍💻',
+    Portfolio: '作品集 👨🏻‍💻',
     Contact: '留言板 ✉️',
   },
   logList: {
@@ -76,7 +76,7 @@ const zh = {
       content: '继续学习新的东西尝试新的事物、多归纳、总结, 挑战自己, 挑战极限.',
     },
   },
-  work: {
+  portfolio: {
     workIntro: '这里是一些自己写的好玩Demo~',
     click: '👇🏿 点击这里 👇🏿',
     tit1: 'css丝滑滚动',
@@ -126,7 +126,7 @@ const en = {
     Blogs: 'Blog 📝',
     Vlogs: 'Vlog 🎬',
     About: 'About me 🤓',
-    Works: 'Works 👨🏻‍💻',
+    Portfolio: 'Portfolio 👨🏻‍💻',
     Contact: 'Contact ✉️',
   },
   logList: {
@@ -196,7 +196,7 @@ const en = {
         'Keep trying and learing new things Keep challenge my limits and striving for excellence',
     },
   },
-  work: {
+  portfolio: {
     workIntro: 'Here`s some cool Demo I write myself',
     click: '👇🏿 Chcek Here 👇🏿',
     tit1: 'scroll-behavior',

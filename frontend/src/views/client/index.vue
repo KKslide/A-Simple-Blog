@@ -11,7 +11,7 @@
       </el-header>
       <el-main>
         <RouterView v-slot="{ Component }">
-          <KeepAlive :include="['BlogListPage', 'VlogListPage', 'AboutPage', 'WorksPage', 'ContactPage']">
+          <KeepAlive :include="['BlogListPage', 'VlogListPage', 'AboutPage', 'PortfolioPage', 'ContactPage']">
             <component :is="Component" />
           </KeepAlive>
         </RouterView>

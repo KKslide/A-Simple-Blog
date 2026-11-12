@@ -27,7 +27,7 @@
         </el-col>
 
         <el-col class="router_link" :span="2">
-          <RouterLink active-class="active" :to="{ name: 'works' }">{{ $t('navbar.Works') }}</RouterLink>
+          <RouterLink active-class="active" :to="{ name: 'portfolio' }">{{ $t('navbar.Portfolio') }}</RouterLink>
         </el-col>
 
         <el-col :span="1">
@@ -80,7 +80,7 @@
         </el-col>
         <el-col :span="24">
           <div class="nav_link">
-            <RouterLink :to="{ name: 'works' }" @click="drawer = false">{{ $t('navbar.Works') }}</RouterLink>
+            <RouterLink :to="{ name: 'portfolio' }" @click="drawer = false">{{ $t('navbar.Portfolio') }}</RouterLink>
           </div>
         </el-col>
         <el-col :span="24">
@@ -101,7 +101,7 @@ defineProps(['isHome'])
 const drawer = ref(false)
 const route = useRoute()
 const currentRoute = computed(() => route.name)
-// const workPages = computed(() => 'works,' + portfoliosList.map(v => v.routeName).join(','))
+// const portfolioPages = computed(() => 'portfolio,' + portfoliosList.map(v => v.routeName).join(','))
 </script>
 
 <style scoped lang="scss">
