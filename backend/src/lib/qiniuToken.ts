@@ -17,8 +17,8 @@ import qiniu from 'qiniu'
 // 先加载 .env，保证模块加载时七牛密钥已就绪
 import '../config/db.ts'
 
-const bucket = process.env.QINIU_BUCKET || 'kkslide'
-const imageUrlPrefix = process.env.QINIU_IMAGE_URL || 'http://example.kkslide.fun/'
+const bucket = process.env.QINIU_BUCKET || 'lykang-space'
+const imageUrlPrefix = process.env.QINIU_IMAGE_URL || 'https://video.kangyouknowwho.space/'
 const accessKey = process.env.QINIU_ACCESS_KEY
 const secretKey = process.env.QINIU_SECRET_KEY
 
