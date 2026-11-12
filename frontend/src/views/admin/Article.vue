@@ -29,6 +29,7 @@
     </el-form>
 
     <el-table
+      ref="tableRef"
       :data="articleData"
       :border="true"
       max-height="600"
@@ -320,7 +321,7 @@ import { ref, reactive, shallowRef, computed, onMounted, onBeforeUnmount, nextTi
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 import type { IDomEditor } from '@wangeditor/editor'
 import type { ArticleItem, CategoryItem, CommentItem } from '@/types/api'
-import { ElMessage, ElMessageBox, ElImageViewer, type FormInstance, type FormRules, type UploadFile } from 'element-plus'
+import { ElMessage, ElMessageBox, ElImageViewer, type FormInstance, type FormRules, type TableInstance, type UploadFile } from 'element-plus'
 import { imageAcceptTypes, isValidImageFile } from '@/config/config'
 import Cropper from './Widgets/Cropper.vue'
 import '@wangeditor/editor/dist/css/style.css'
@@ -366,6 +367,7 @@ const handleChange = (editor: IDomEditor) => {
 }
 
 const articleData = ref<ArticleItem[]>([])
+const tableRef = ref<TableInstance | null>(null)
 const categoryData = ref<CategoryItem[]>([])
 const pageSize = ref(5)
 const total = ref(0)
@@ -586,14 +588,16 @@ async function getCateData() {
   })
 }
 
-function pageChange(currentPage: number) {
+async function pageChange(currentPage: number) {
   curPage.value = currentPage
-  getArticleData()
+  await getArticleData()
+  tableRef.value?.setScrollTop(0)
 }
 
-function pageSizeChange() {
+async function pageSizeChange() {
   curPage.value = 1
-  getArticleData()
+  await getArticleData()
+  tableRef.value?.setScrollTop(0)
 }
 
 function openEditor() {
