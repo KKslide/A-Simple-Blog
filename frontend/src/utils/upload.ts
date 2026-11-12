@@ -27,6 +27,8 @@ export interface UploadResult {
 export interface UploadOptions {
   /** 上传进度回调，percent 为 0-100 的整数 */
   onProgress?: (percent: number) => void
+  /** 七牛 key 目录前缀, 如 article_covers */
+  prefix?: string
 }
 
 /** MIME 子类型 → 扩展名，处理几个不能直接当扩展名用的特例 */
@@ -64,7 +66,7 @@ function toFile(file: File | Blob): File {
 export function uploadFile(file: File | Blob, options: UploadOptions = {}): Promise<UploadResult> {
   const target = toFile(file)
 
-  return ServerAPI.getUploadToken(target.name).then((res) => {
+  return ServerAPI.getUploadToken(target.name, options.prefix).then((res) => {
     const credential = res.data
     if (res.code !== 1 || !credential?.token || !credential?.key) {
       throw new Error(res.msg || '获取上传凭证失败')

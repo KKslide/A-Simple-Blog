@@ -95,9 +95,18 @@ function rotateRight() {
 
 function uploadImg() {
   if (!cropper) return
-  cropper.getCroppedCanvas().toBlob((blob: Blob | null) => {
-    if (blob) emit('cropperDone', blob)
-  }, 'image/jpeg')
+  const canvas = cropper.getCroppedCanvas()
+  // Cropper 只负责裁切并返回 canvas, 输出格式由 canvas.toBlob 决定
+  canvas.toBlob((blob: Blob | null) => {
+    if (blob?.type === 'image/webp') {
+      emit('cropperDone', blob)
+      return
+    }
+    // 浏览器不支持 WebP 编码时回退 JPEG
+    canvas.toBlob((fallback: Blob | null) => {
+      if (fallback) emit('cropperDone', fallback)
+    }, 'image/jpeg', 0.92)
+  }, 'image/webp', 0.9)
 }
 
 function handleCancel() {

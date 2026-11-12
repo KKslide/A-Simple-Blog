@@ -28,13 +28,37 @@
       </el-form-item>
     </el-form>
 
-    <el-table :data="articleData" :border="true" max-height="600" style="width: 100%">
-      <el-table-column prop="id" label="文章ID" width="80" fixed="left"></el-table-column>
-      <el-table-column prop="title" label="分文章标题" min-width="300"></el-table-column>
-      <el-table-column prop="cate_name" label="文章分类" min-width="100"></el-table-column>
-      <el-table-column prop="created_at" label="添加时间" min-width="200">
+    <el-table
+      :data="articleData"
+      :border="true"
+      max-height="600"
+      style="width: 100%"
+      :default-sort="{ prop: 'created_at', order: 'descending' }"
+    >
+      <el-table-column prop="id" label="文章ID" min-width="95" fixed="left" sortable></el-table-column>
+      <el-table-column prop="title" label="分文章标题" min-width="300" sortable></el-table-column>
+      <el-table-column label="封面图" width="145">
+        <template #default="scope">
+          <el-image
+            v-if="scope.row.cover_url"
+            :src="utils.mediaUrl(scope.row.cover_url)"
+            :preview-src-list="[utils.mediaUrl(scope.row.cover_url)]"
+            preview-teleported
+            fit="cover"
+            style="width: 120px; height: 75px; border-radius: 5px; cursor: pointer;"
+          />
+          <span v-else>-</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="cate_name" label="文章分类" min-width="105" sortable></el-table-column>
+      <el-table-column prop="created_at" label="添加时间" min-width="200" sortable>
         <template #default="scope">
           <p>{{ formatDate(scope.row.created_at) }}</p>
+        </template>
+      </el-table-column>
+      <el-table-column prop="updated_at" label="修改时间" min-width="200" sortable>
+        <template #default="scope">
+          <p>{{ formatDate(scope.row.updated_at) }}</p>
         </template>
       </el-table-column>
       <el-table-column prop="view_count" label="阅读量" min-width="100"></el-table-column>
@@ -326,8 +350,8 @@ const handleCreated = (editor: IDomEditor) => {
       ElMessage.warning('只能上传图片文件')
       return
     }
-    // 前端直传七牛云
-    uploadFile(file)
+    // 前端直传七牛云, 正文插图统一放到 article_contents 目录
+    uploadFile(file, { prefix: 'article_contents' })
       .then(({ url }) => {
         insertFn(url)
       })
@@ -489,8 +513,8 @@ function uploadHandler(file: Blob) {
   const ext = file.type.split('/')[1] || 'jpg'
   const filename = `cover_${Date.now()}.${ext}`
   const coverFile = new File([file], filename, { type: file.type || 'image/jpeg' })
-  // 前端直传七牛云
-  uploadFile(coverFile)
+  // 前端直传七牛云, 封面统一放到 article_covers 目录
+  uploadFile(coverFile, { prefix: 'article_covers' })
     .then(({ url }) => {
       ElMessage.success('封面上传成功~')
       articleFrom.cover_url = url

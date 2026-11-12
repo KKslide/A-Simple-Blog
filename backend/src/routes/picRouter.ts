@@ -36,15 +36,15 @@ router.post('/pic/upload', qiniuUpload.picUpload)
  * POST /pic/token
  * 签发七牛云直传凭证（前端直传）
  *
- * 请求体: { filename?: string }  —— 仅用于推导资源 key 的扩展名与可读前缀
+ * 请求体: { filename?: string, prefix?: string }  —— filename 用于推导 key 的扩展名与可读前缀, prefix 用于指定目录前缀
  * 响应:   { code: 1, msg, data: { token, key, imageUrl, expires } }
  *
  * 前端拿到后在浏览器里直接把文件传到七牛，文件不经过本服务。
  * 凭证已被限定为「只能写入这一个 key」，有效期 1 小时，且不可覆盖。
  */
 router.post('/pic/token', (req, res) => {
-  const { filename } = req.body || {}
-  const credential = createUploadToken(filename)
+  const { filename, prefix } = req.body || {}
+  const credential = createUploadToken(filename, prefix)
 
   if (!credential) {
     return fail(res, '七牛云凭证未配置，请联系管理员', 500)

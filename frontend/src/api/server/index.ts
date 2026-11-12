@@ -237,8 +237,10 @@ class ServerAPI extends ApiHelper {
    *
    * @param filename - 原始文件名，服务端据此推导资源 key 的扩展名
    */
-  getUploadToken(filename: string) {
-    return this.post<ApiResponse<UploadTokenData>, { filename: string }>('/pic/token', { filename })
+  getUploadToken(filename: string, prefix?: string) {
+    const body: { filename: string; prefix?: string } = { filename }
+    if (prefix) body.prefix = prefix
+    return this.post<ApiResponse<UploadTokenData>, typeof body>('/pic/token', body)
   }
 }
 

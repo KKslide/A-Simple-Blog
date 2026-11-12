@@ -50,12 +50,27 @@ function getMac(): qiniu.auth.digest.Mac | null {
 }
 
 /**
- * 由原始文件名生成唯一的资源 key
- * 命名规则与本地后台上传保持一致：原名_时间戳.扩展名
- * 形如：cover_1758612345678.jpg / 我的封面_1758612345678.png
- * @param originalName 浏览器传来的原始文件名（仅用于取扩展名和可读前缀）
+ * 规范化 key 目录前缀
+ * 只允许字母、数字、下划线、短横线组成的单级或多级目录
+ * 非法前缀直接回退为空, 避免路径穿越
  */
-function buildKey(originalName?: string): string {
+function normalizePrefix(prefix?: string): string {
+  if (typeof prefix !== 'string') return ''
+  const cleaned = prefix.replace(/^\/+|\/+$/g, '')
+  if (!cleaned) return ''
+  const segments = cleaned.split('/')
+  if (segments.some((seg) => !/^[a-zA-Z0-9_-]+$/.test(seg))) return ''
+  return segments.join('/')
+}
+
+/**
+ * 由原始文件名生成唯一的资源 key
+ * 命名规则：原名_时间戳.扩展名, 可附加目录前缀
+ * 形如：cover_1758612345678.jpg / article_covers/cover_1758612345678.jpg
+ * @param originalName 浏览器传来的原始文件名（仅用于取扩展名和可读前缀）
+ * @param prefix 可选的 key 目录前缀, 如 article_covers
+ */
+function buildKey(originalName?: string, prefix?: string): string {
   const safeName = typeof originalName === 'string' ? originalName : ''
   const rawExt = path.extname(safeName).toLowerCase()
   const ext = ALLOWED_EXTENSIONS.includes(rawExt) ? rawExt : '.jpg'
@@ -69,7 +84,9 @@ function buildKey(originalName?: string): string {
       .replace(/^[_.-]+|[_.-]+$/g, '')
       .slice(0, 40) || 'img'
 
-  return `${base}_${Date.now()}${ext}`
+  const filename = `${base}_${Date.now()}${ext}`
+  const safePrefix = normalizePrefix(prefix)
+  return safePrefix ? `${safePrefix}/${filename}` : filename
 }
 
 interface UploadCredential {
@@ -82,13 +99,14 @@ interface UploadCredential {
 /**
  * 签发一次性的上传凭证
  * @param originalName 原始文件名，用于推导 key 的扩展名与前缀
+ * @param prefix 可选的 key 目录前缀, 如 article_covers
  * @returns 密钥未配置时返回 null
  */
-function createUploadToken(originalName?: string): UploadCredential | null {
+function createUploadToken(originalName?: string, prefix?: string): UploadCredential | null {
   const mac = getMac()
   if (!mac) return null
 
-  const key = buildKey(originalName)
+  const key = buildKey(originalName, prefix)
   const putPolicy = new qiniu.rs.PutPolicy({
     // 精确到具体 key：该凭证只能写入这一个资源
     scope: `${bucket}:${key}`,
