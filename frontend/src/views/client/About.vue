@@ -37,11 +37,14 @@
             </el-col>
             <el-divider></el-divider>
             <el-col>
+              <!-- TODO: 更新 Resume 链接后再恢复简历预览 -->
+              <!--
               <el-button v-show="!isChecked" :type="''" @click="checkResume" >
                 <span class="mr-3">My Resume</span>
                 <el-icon><View /></el-icon>
               </el-button>
               <PdfViewer  v-show="isChecked" src="https://video.kangyouknowwho.space/Resume.pdf"/>
+              -->
             </el-col>
           </el-row>
         </el-col>
