@@ -15,8 +15,6 @@ declare module 'vue' {
     Clock: typeof import('@element-plus/icons-vue')['Clock']
     CollectionTag: typeof import('@element-plus/icons-vue')['CollectionTag']
     Comment: typeof import('@element-plus/icons-vue')['Comment']
-    DArrowLeft: typeof import('@element-plus/icons-vue')['DArrowLeft']
-    DArrowRight: typeof import('@element-plus/icons-vue')['DArrowRight']
     Delete: typeof import('@element-plus/icons-vue')['Delete']
     EditPen: typeof import('@element-plus/icons-vue')['EditPen']
     ElButton: typeof import('element-plus/es')['ElButton']
