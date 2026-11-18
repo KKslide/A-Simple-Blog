@@ -45,11 +45,12 @@ async function picUpload(req: Request, res: Response) {
   const form = formidable.formidable({
     uploadDir: UPLOAD_DIR,
     keepExtensions: true,
+    maxFiles: 1,
+    maxFileSize: 10 * 1024 * 1024,
   })
 
   try {
     const [_fields, files] = await form.parse(req)
-    // FIXME: 中转上传未设 maxFileSize，上传大小无限制，需补上（如 10MB）
     const fileArr = Object.values(files)[0] ?? []
     if (!fileArr.length) {
       res.end(JSON.stringify({ status: '-1', msg: '上传失败', error: '未选择文件' }))
@@ -97,7 +98,17 @@ async function picUpload(req: Request, res: Response) {
     safeUnlink(localFile)
   } catch (err) {
     if (!res.writableEnded) {
-      res.end(JSON.stringify({ status: '-1', msg: '上传失败', error: String(err) }))
+      const code = (err as { code?: number }).code
+      const tooLarge =
+        code === formidable.errors.biggerThanMaxFileSize ||
+        code === formidable.errors.biggerThanTotalMaxFileSize
+      res.end(
+        JSON.stringify({
+          status: '-1',
+          msg: tooLarge ? '文件大小不能超过 10MB' : '上传失败',
+          error: String(err),
+        }),
+      )
     }
   }
 }

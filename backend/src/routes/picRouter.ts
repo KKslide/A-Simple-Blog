@@ -22,6 +22,7 @@ import { createUploadToken } from '../lib/qiniuToken.ts'
 import { UPLOAD_DIR } from '../config/paths.ts'
 
 const router = express.Router()
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 // 🔒 上传接口需要登录验证
 router.use(authMiddleware)
@@ -58,15 +59,15 @@ router.post('/pic/token', (req, res) => {
  * 请求体: multipart/form-data, 字段名 "file"
  * 响应: { code: 1, msg: "上传成功", data: { imageUrl: string } }
  */
-// mark 可用nginx替换 → client_max_body_size 10m; (在 /api/pic location 中限制上传大小)
 router.post('/pic/img_upload', async (req, res) => {
   const uploadDir = UPLOAD_DIR
   if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
 
-  // FIXME: 开发环境没有 nginx 兜底，formidable 未设 maxFileSize，上传大小无限制，需补上（如 10MB）
   const form = formidable.formidable({
     uploadDir,
     keepExtensions: true,
+    maxFiles: 1,
+    maxFileSize: MAX_UPLOAD_SIZE,
   })
 
   try {
@@ -100,7 +101,14 @@ router.post('/pic/img_upload', async (req, res) => {
       }
       success(res, { msg: '上传成功', data: { imageUrl: '/upload/' + originalName } })
     })
-  } catch {
+  } catch (err) {
+    const code = (err as { code?: number }).code
+    if (
+      code === formidable.errors.biggerThanMaxFileSize ||
+      code === formidable.errors.biggerThanTotalMaxFileSize
+    ) {
+      return fail(res, '文件大小不能超过 10MB')
+    }
     return fail(res, '上传失败！')
   }
 })
