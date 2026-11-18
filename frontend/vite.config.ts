@@ -26,6 +26,8 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       port: 8888,
+      // 本地使用 lykang.com 域名访问 Vite 时, 允许该 Host
+      allowedHosts: ['lykang.com', '.lykang.com'],
       proxy: {
         '/api': {
           changeOrigin: true,
@@ -39,9 +41,8 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
-      // 前端产物输出到后端编译目录之下（backend 为 TS 项目，dist 归 tsc 使用，
-      // 前端构建产物放在 dist/public，由后端静态服务从这里托管）
-      outDir: '../backend/dist/public',
+      // 前端产物输出到项目根目录的 www/dist
+      outDir: '../www/dist',
       emptyOutDir: true,
       rollupOptions: {
         output: {
