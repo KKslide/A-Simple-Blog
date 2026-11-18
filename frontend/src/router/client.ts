@@ -126,6 +126,10 @@ export const clientRoutes = [
           {
             path: 'hengzhiyuanMap',
             component: () => import('@/views/client/Portfolio/HengzhiyuanMap/index.vue'),
+            // TODO: 生产环境后续再决定 HengzhiyuanMap 的开放策略, 当前仅开发环境可访问
+            beforeEnter: () => {
+              if (!import.meta.env.DEV) return { name: 'NotFound' }
+            },
             children: [
               {
                 path: '',

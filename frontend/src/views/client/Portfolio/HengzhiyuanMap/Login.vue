@@ -41,6 +41,7 @@ function loginHandler () {
   if (!loginForm.account || !loginForm.pwd) return
   doLogin()
 }
+// TODO: 生产环境/开源前移除真实账号, 改为环境变量或演示账号
 function doLogin () {
   let form = toRaw(loginForm)
   form = {

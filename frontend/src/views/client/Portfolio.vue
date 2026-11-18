@@ -24,7 +24,13 @@ import utils from '@/utils'
 import { portfoliosList } from '@/config/config'
 import Card from './Widgets/Card.vue'
 const router = useRouter()
-const list = computed(() => [...portfoliosList].sort(() => Math.random() - 0.5))
+// TODO: 生产环境后续再决定 HengzhiyuanMap 的开放策略, 当前仅开发环境展示
+const list = computed(() => {
+  const source = import.meta.env.DEV
+    ? portfoliosList
+    : portfoliosList.filter(item => item.routeName !== 'hzyLogin')
+  return [...source].sort(() => Math.random() - 0.5)
+})
 
 /** Vite 打包的静态资源直接使用, 其余相对路径走媒体域名 */
 const resolveImage = (img: string) => {
