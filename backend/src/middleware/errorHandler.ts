@@ -8,9 +8,6 @@ export interface HttpStatusError extends Error {
   stack?: string
 }
 
-// mark 可用nginx替换 → error_page 404 /api_404.json; proxy_intercept_errors on;
-//   location = /api_404.json { return 200 '{"code":0,"msg":"资源不存在"}'; }
-//   注意：仅处理路由层 404，Node.js 运行时错误（500）仍需保留
 /** 404：资源不存在 */
 export function notFoundHandler(_req: Request, _res: Response, next: NextFunction) {
   next(createError(404, '资源不存在'))
